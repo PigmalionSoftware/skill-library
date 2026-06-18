@@ -20,3 +20,5 @@ Commit already-staged changes and push to the current branch.
 4. Commit: `git commit -m "<message>"` — no Co-Authored-By line
 5. Push: `git push`
 6. Confirm with `git log --oneline -1`.
+
+update text ignore
