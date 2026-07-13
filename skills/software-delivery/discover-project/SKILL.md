@@ -70,7 +70,26 @@ Leé la entrada y separá explícitamente:
 - **Solución propuesta por el cliente**: lo que pidió (guardala, pero no la trates como un requisito).
 - **Qué no está claro**: los huecos que hay que cerrar o convertir en supuestos.
 
-### 2. Hacer preguntas de descubrimiento
+### 2. Triage de granularidad (obligatorio cuando la entrada trae detalle técnico)
+
+Algunos clientes —sobre todo con perfil técnico— llegan con documentación que ya incluye specs de UI, endpoints, tablas/atributos de datos, o catálogos exhaustivos. Ese detalle es valioso, pero **no pertenece al brief de negocio**: pertenece a Requisitos (Etapa 1) o Arquitectura (Etapa 2).
+
+Antes de armar cualquier pregunta, recorré la entrada e identificá todo lo que sea de este tipo:
+
+- specs de UI (columnas de listados, filtros, layout, campos de formulario),
+- modelos de datos (atributos, tipos de dato, catálogos, entidades),
+- endpoints, contratos de API o integraciones ya especificadas a nivel técnico,
+- reglas de cálculo o lógica de negocio ya detallada a nivel de implementación.
+
+Con eso:
+
+1. **No lo traslades tal cual al brief.** El brief resume esto en términos de capacidad de negocio (qué proceso cubre, qué decisión habilita), nunca como lista de columnas/campos/endpoints.
+2. **No lo descartes.** Preservalo íntegro en una sección aparte del brief: `## Anexo — Insumos técnicos recibidos del cliente`. Ahí sí va tal cual vino, sin resumir, para que Requisitos/Arquitectura lo aprovechen sin tener que pedirlo de nuevo.
+3. **Marcá qué quedó como decisión ya tomada por el cliente vs. qué es solo una propuesta a validar.** Que el cliente haya escrito un endpoint no significa que esa forma de resolverlo esté aprobada — a menos que el propio cliente lo presente como una restricción dura (ej. "tiene que integrar con este sistema que ya tiene esta API").
+
+Este triage se hace una sola vez, al principio, y no se repite en cada pregunta — pero condiciona cómo redactás "Alcance" en el paso final: ese detalle no debe reaparecer ahí.
+
+### 3. Hacer preguntas de descubrimiento
 
 Hacé las preguntas en el mismo idioma que use el cliente/facilitador.
 
@@ -123,24 +142,24 @@ Antes de sugerir cualquier default:
 
 Evitá defaults genéricos si hay evidencia en el doc de capacidades. Cuando sugieras uno, explicá brevemente por qué encaja con la empresa y, si aplica, referenciá el servicio o capacidad concreta.
 
-### 3. Iterar hasta cerrar el encuadre
+### 4. Iterar hasta cerrar el encuadre
 
 - Si una respuesta está incompleta → volvé a preguntar.
 - Si algo es ambiguo → cerralo o convertilo en supuesto explícito.
 - No avances mientras queden dimensiones sin cerrar y sin supuesto registrado.
 
-### 4. Pregunta de cierre (obligatoria, siempre la última antes del gate)
+### 5. Pregunta de cierre (obligatoria, siempre la última antes del gate)
 
 Una vez que las 7 dimensiones están cerradas o registradas como supuesto, y **antes** de pasar al gate de confirmación, hacé siempre esta pregunta, sin excepción:
 
 "Antes de armar el brief: ¿hay algo más que quieras agregar, corregir o aclarar?"
 
-- Si la respuesta agrega o cambia algo → volvé al paso 3 (puede reabrir una dimensión o agregar un supuesto nuevo).
-- Si la respuesta es que no hay nada más → recién ahí pasá al gate del paso 5.
+- Si la respuesta agrega o cambia algo → volvé al paso 4 (puede reabrir una dimensión o agregar un supuesto nuevo).
+- Si la respuesta es que no hay nada más → recién ahí pasá al gate del paso 6.
 
 Esta pregunta existe para capturar lo que las 7 dimensiones no anticiparon. No la reemplaces por ninguna de las preguntas de encuadre ni la saltees aunque el encuadre parezca completo.
 
-### 5. Confirmar antes de escribir (gate)
+### 6. Confirmar antes de escribir (gate)
 
 Cuando el encuadre esté cerrado, preguntá:
 
@@ -148,9 +167,9 @@ Cuando el encuadre esté cerrado, preguntá:
 
 No lo escribas todavía.
 
-### 6. Redactar y guardar el archivo
+### 7. Redactar y guardar el archivo
 
-Solo si el facilitador confirma explícitamente en el paso 5, escribí el artefacto final con el schema de abajo **y guardalo como archivo**, no solo en el chat.
+Solo si el facilitador confirma explícitamente en el paso 6, escribí el artefacto final con el schema de abajo **y guardalo como archivo**, no solo en el chat.
 
 **Nombre del archivo:**
 
@@ -160,9 +179,11 @@ Donde `<slug-del-proyecto>` es el título del proyecto en minúsculas, sin acent
 
 **Ubicación:** la raíz del proyecto/repositorio donde se está ejecutando esta skill (no dentro de una subcarpeta, salvo que el facilitador pida explícitamente otra ubicación).
 
+Si el paso 2 identificó insumos técnicos del cliente, el archivo incluye la sección `## Anexo — Insumos técnicos recibidos del cliente` con ese detalle preservado tal cual.
+
 Después de guardarlo, confirmá al facilitador el nombre y la ubicación del archivo creado.
 
-### 7. Handoff a la Etapa 1
+### 8. Handoff a la Etapa 1
 
 El brief termina con una sección de handoff que lista las preguntas abiertas que la Etapa 1 (Requisitos) deberá resolver. Así la cadena no se corta.
 
@@ -242,7 +263,7 @@ El encuadre de negocio está cerrado. Todas las dimensiones están resueltas o r
 
 ### En alcance
 
-- <ítem>
+- <ítem, a nivel de capacidad de negocio — NO columnas de listado, ni atributos de datos, ni endpoints>
 
 ### Fuera de alcance / no-goals
 
@@ -270,6 +291,12 @@ El encuadre de negocio está cerrado. Todas las dimensiones están resueltas o r
 - <condición de negocio observable que indica que el v1 resolvió el problema>
 - <...>
 
+## Anexo — Insumos técnicos recibidos del cliente
+
+> Solo si el paso 2 detectó detalle técnico en la entrada (specs de UI, modelos de datos, endpoints, catálogos). Se preserva tal cual vino, sin resumir, para que Requisitos/Arquitectura lo reciban directo. Si no hubo insumos de este tipo, omitir esta sección.
+
+<detalle técnico preservado, agrupado por tipo: UI / datos / integraciones / reglas de cálculo>
+
 ## Handoff a Etapa 1 (Requisitos)
 
 Preguntas abiertas que Requisitos debe resolver:
@@ -283,6 +310,7 @@ Preguntas abiertas que Requisitos debe resolver:
 
 - No escribas requisitos técnicos, arquitectura ni código.
 - No trates la solución que pidió el cliente como un requisito cerrado.
+- Si la entrada trae detalle técnico (UI, datos, endpoints, catálogos), no lo traslades a "Alcance": resumilo a nivel de negocio y preservá el detalle íntegro en el Anexo.
 - No dejes ninguna dimensión en ambigüedad: cerrala o registrala como supuesto con dueño y validación.
 - Toda meta vaga se convierte en objetivo medible o en supuesto a validar.
 - No redactes el brief hasta que el facilitador confirme.
