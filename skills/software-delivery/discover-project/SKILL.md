@@ -129,7 +129,18 @@ Evitá defaults genéricos si hay evidencia en el doc de capacidades. Cuando sug
 - Si algo es ambiguo → cerralo o convertilo en supuesto explícito.
 - No avances mientras queden dimensiones sin cerrar y sin supuesto registrado.
 
-### 4. Confirmar antes de escribir (gate)
+### 4. Pregunta de cierre (obligatoria, siempre la última antes del gate)
+
+Una vez que las 7 dimensiones están cerradas o registradas como supuesto, y **antes** de pasar al gate de confirmación, hacé siempre esta pregunta, sin excepción:
+
+"Antes de armar el brief: ¿hay algo más que quieras agregar, corregir o aclarar?"
+
+- Si la respuesta agrega o cambia algo → volvé al paso 3 (puede reabrir una dimensión o agregar un supuesto nuevo).
+- Si la respuesta es que no hay nada más → recién ahí pasá al gate del paso 5.
+
+Esta pregunta existe para capturar lo que las 7 dimensiones no anticiparon. No la reemplaces por ninguna de las preguntas de encuadre ni la saltees aunque el encuadre parezca completo.
+
+### 5. Confirmar antes de escribir (gate)
 
 Cuando el encuadre esté cerrado, preguntá:
 
@@ -137,11 +148,21 @@ Cuando el encuadre esté cerrado, preguntá:
 
 No lo escribas todavía.
 
-### 5. Redactar solo después de confirmación
+### 6. Redactar y guardar el archivo
 
-Solo si el facilitador confirma explícitamente, escribí el artefacto final con el schema de abajo.
+Solo si el facilitador confirma explícitamente en el paso 5, escribí el artefacto final con el schema de abajo **y guardalo como archivo**, no solo en el chat.
 
-### 6. Handoff a la Etapa 1
+**Nombre del archivo:**
+
+    project-brief-<slug-del-proyecto>-<YYYY-MM-DD>.md
+
+Donde `<slug-del-proyecto>` es el título del proyecto en minúsculas, sin acentos, con espacios reemplazados por guiones (ej. `project-brief-portal-clientes-acme-2026-07-13.md`). La fecha evita que se pise con briefs de otros proyectos o con una corrida anterior del mismo día.
+
+**Ubicación:** la raíz del proyecto/repositorio donde se está ejecutando esta skill (no dentro de una subcarpeta, salvo que el facilitador pida explícitamente otra ubicación).
+
+Después de guardarlo, confirmá al facilitador el nombre y la ubicación del archivo creado.
+
+### 7. Handoff a la Etapa 1
 
 El brief termina con una sección de handoff que lista las preguntas abiertas que la Etapa 1 (Requisitos) deberá resolver. Así la cadena no se corta.
 
@@ -265,6 +286,8 @@ Preguntas abiertas que Requisitos debe resolver:
 - No dejes ninguna dimensión en ambigüedad: cerrala o registrala como supuesto con dueño y validación.
 - Toda meta vaga se convierte en objetivo medible o en supuesto a validar.
 - No redactes el brief hasta que el facilitador confirme.
+- Siempre hacé la pregunta de cierre ("¿algo más?") antes del gate de confirmación, sin excepción.
+- El brief final se guarda como archivo en la raíz del proyecto, con el nombre `project-brief-<slug>-<fecha>.md`; no alcanza con mostrarlo solo en el chat.
 - Anclá los defaults en el doc de capacidades; si no existe, avisalo y registralo como supuesto.
 - Respondé siempre en el idioma del usuario.
 - Optimizá para claridad del problema, no para verbosidad.
