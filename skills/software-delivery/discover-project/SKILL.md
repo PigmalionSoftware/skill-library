@@ -1,6 +1,6 @@
 ---
 name: discover-project
-description: 'Convierte la idea vaga de un cliente en un Project Brief cerrado en el encuadre de negocio: separa el problema de la solución, fuerza objetivos medibles y deja lo desconocido como supuestos a validar en vez de ambigüedad silenciosa. Es la Etapa 0 (descubrimiento) del flujo de proyecto, pensada para un facilitador interno (PM técnico o líder técnico) que conduce la conversación con el cliente. Úsala SIEMPRE que arranque un proyecto nuevo, cuando un cliente llegue con una idea poco definida, o cuando pidan "armar el brief", "encuadrar el proyecto", "entender qué quiere el cliente" o "hacer el descubrimiento", aunque no usen esas palabras exactas. NO es para cerrar el requisito de un ticket dentro de un repo existente — para eso está close-requirement.'
+description: 'ETAPA 0: Convierte la idea vaga de un cliente en un Project Brief cerrado en el encuadre de negocio: separa el problema de la solución, fuerza objetivos medibles y deja lo desconocido como supuestos a validar en vez de ambigüedad silenciosa. Es la Etapa 0 (descubrimiento) del flujo de proyecto, pensada para un facilitador interno (PM técnico o líder técnico) que conduce la conversación con el cliente. Úsala SIEMPRE que arranque un proyecto nuevo, cuando un cliente llegue con una idea poco definida, o cuando pidan "armar el brief", "encuadrar el proyecto", "entender qué quiere el cliente" o "hacer el descubrimiento", aunque no usen esas palabras exactas. NO es para cerrar el requisito de un ticket dentro de un repo existente — para eso está close-requirement.'
 ---
 
 # Project Discovery
@@ -53,7 +53,7 @@ La conduce un **facilitador interno** (PM técnico o líder técnico), no el cli
 **Guard obligatorio.** El perfil técnico tiende a saltar a la solución. No lo hagas. Tu criterio técnico se usa solo para:
 
 - detectar cuándo una idea del cliente esconde un problema distinto al que enuncia,
-- proponer defaults de *negocio* anclados en lo que la empresa puede hacer,
+- proponer defaults de _negocio_ anclados en lo que la empresa puede hacer,
 - reconocer una restricción o riesgo real temprano.
 
 No se usa para elegir tecnología, diseñar la solución ni prometer una implementación. Si te descubrís pensando "esto lo haríamos con X", esa es la señal de que te saliste del espacio del problema.
