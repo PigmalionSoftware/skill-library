@@ -1,6 +1,6 @@
 ---
 name: elicit-requirements
-description: 'ETAPA 1:Convierte un Project Brief ya validado (Etapa 0) en un SRS reducido: requisitos funcionales y no funcionales verificables, trazables y sin ambigüedad, que sirven de entrada de diseño para la Etapa 2 (Arquitectura). Es la Etapa 1 (Requisitos) del flujo de proyecto, conducida por un facilitador interno (PM técnico o líder técnico) que trabaja sobre el Brief y sube al cliente solo las decisiones que lo requieren. Úsala SIEMPRE que exista un Project Brief cerrado y haya que "sacar los requisitos", "armar el SRS", "detallar qué tiene que hacer el sistema", "resolver el handoff a requisitos" o "pasar del brief a los requisitos", aunque no usen esas palabras exactas. NO es para el encuadre de negocio inicial (eso es discover-project, Etapa 0), NO decide arquitectura ni stack (eso es Etapa 2), y NO cierra el requisito de un ticket dentro de un repo existente (para eso está close-requirement).'
+description: 'ETAPA 1: Convierte un Project Brief ya validado (Etapa 0) en un SRS reducido: requisitos funcionales y no funcionales verificables, trazables y sin ambigüedad, que sirven de entrada de diseño para la Etapa 2 (Arquitectura). Es la Etapa 1 (Requisitos) del flujo de proyecto, conducida por un facilitador interno (PM técnico o líder técnico) que trabaja sobre el Brief y sube al cliente solo las decisiones que lo requieren. Úsala SIEMPRE que exista un Project Brief cerrado y haya que "sacar los requisitos", "armar el SRS", "detallar qué tiene que hacer el sistema", "resolver el handoff a requisitos" o "pasar del brief a los requisitos", aunque no usen esas palabras exactas. NO es para el encuadre de negocio inicial (eso es discover-project, Etapa 0), NO decide arquitectura ni stack (eso es Etapa 2), y NO cierra el requisito de un ticket dentro de un repo existente (para eso está close-requirement).'
 ---
 
 # Elicitación de Requisitos
@@ -85,7 +85,7 @@ Si no tenés el Brief (ruta o contenido), **detenete y pedilo** antes de cualqui
 Antes de hacer preguntas nuevas:
 
 1. **Convertí cada ítem del "Handoff a Etapa 1" en un ítem de trabajo abierto** que hay que cerrar o volver supuesto. Esa lista es el esqueleto inicial de esta etapa, no un punto de partida genérico.
-2. **Reconciliá con el Anexo.** Buscá qué insumos técnicos que el cliente ya entregó responden (parcial o totalmente) a esos ítems, para no volver a preguntar lo que ya está. El Anexo es evidencia: se valida y se traduce a requisito, no se copia como requisito.
+2. **Reconciliá con el Anexo.** Buscá qué insumos técnicos que el cliente ya entregó responden (parcial o totalmente) a esos ítems, para no volver a preguntar lo que ya está. El Anexo es evidencia: se valida y se traduce a requisito, no se copia como requisito. Este cruce es además un **chequeo de completitud**: cada concepto del modelo de datos y cada capacidad que figure en el Anexo tiene que terminar reflejado en algún requisito o marcado explícitamente como fuera de alcance. Un concepto del Anexo que no aparece en ningún requisito ni como no-goal es un hueco silencioso —no lo dejes pasar por el solo hecho de estar en el Anexo—: cerralo o registralo como supuesto.
 3. **Verificá la integridad del encuadre.** Si para derivar requisitos te falta algo que debía venir cerrado del Brief (p. ej. un objetivo sin métrica, un alcance contradictorio, un decisor sin definir), **rebotá a la Etapa 0** con una nota de qué falta, en vez de resolverlo acá.
 
 ### 3. Triage de granularidad (obligatorio cuando la entrada trae detalle técnico)
@@ -120,6 +120,14 @@ Tus preguntas deben cubrir colectivamente:
 8. **Restricciones y su traducción a requisitos.** No se trata de descubrir restricciones nuevas (deadline, presupuesto, regulatorio ya vienen del Brief), sino de **traducir las que generan requisitos** a algo concreto: regulatorio "derecho al borrado" → RF "el usuario puede solicitar la baja de sus datos". Las que no generan requisito quedan como límites que acotan la Etapa 2.
 
 La UI **no** es una dimensión de esta etapa: "qué puede hacer el usuario" es funcional (dim. 1); el layout, las pantallas o las columnas de un listado van al Anexo; los escenarios paso a paso son Etapa 3.
+
+#### Alcance emergente (lo que el Brief no tenía)
+
+La elicitación no solo cierra los ítems abiertos del Brief: también **descubre** capacidades o integraciones que el Brief no anticipó (p. ej. "hay que poder dar de alta a los colaboradores antes de asignarles un asset", o "los colaboradores en realidad vienen de tal sistema"). Sumarlas está permitido —para eso se elicita—, pero con tres recaudos, porque es acá donde el alcance se infla sin que nadie lo decida:
+
+1. **Marcalo como alcance agregado en Etapa 1.** En el `traza-a` del requisito, dejá explícito "decisión de elicitación — no figuraba en el Brief", para que se vea que expande el encuadre original en vez de derivarse de él.
+2. **No lo metas a must-v1 por inercia.** Algo que agranda el alcance —sobre todo una integración no dominada— no es must-v1 solo porque surgió en la misma charla. Separá lo esencial de lo diferible aunque vengan juntos: si una capacidad manual alcanza para el v1, la automatización o integración que la mejora suele ser diferible.
+3. **Si mueve el tamaño o el riesgo del v1, es decisión del decisor, no tuya.** Cuando lo emergente cambia de forma significativa el esfuerzo o el riesgo del v1, ya no es un detalle de requisitos: toca una decisión de alcance que pertenece al Brief. Marcalo para revisión del decisor (confirmación explícita o rebote suave a Etapa 0), no lo absorbas en silencio.
 
 ### 5. Exigir las reglas transversales a cada requisito
 
@@ -349,6 +357,8 @@ Decisiones técnicas que aparecieron y NO se resolvieron acá:
 - No escribas arquitectura, stack, esquema de datos, historias, Given-When-Then ni código. Toda decisión técnica va al Handoff a Etapa 2.
 - Guard: "qué / qué-tan-bien, nunca cómo". Si pensás "esto lo haríamos con X", te pasaste a Etapa 2.
 - Todo requisito es verificable (criterios de aceptación a nivel requisito, no GWT ni pasos de UI) y traza a algo del Brief vía `traza-a`. El que no traza es scope creep o hueco del Brief.
+- Lo que la elicitación descubre y el Brief no tenía se puede sumar, pero se marca como alcance agregado en E1 y no entra a must-v1 por inercia; una integración no dominada que agranda el v1 va, por default, diferida o a revisión del decisor.
+- Antes de cerrar, hacé el barrido de completitud contra el Anexo: todo concepto o capacidad del Anexo termina en un requisito o como no-goal explícito; lo que no aparece es hueco a cerrar o supuesto.
 - Todo RNF es medible: métrica y valor objetivo, o no es un RNF cerrado.
 - Los datos del dominio se describen por significado, nunca por tipo/tabla/esquema. La UI no es dimensión de esta etapa.
 - El detalle técnico de la entrada no se traslada a las secciones de negocio: contrato impuesto → Anexo; diseño → Handoff a Etapa 2.
