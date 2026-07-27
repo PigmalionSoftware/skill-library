@@ -115,7 +115,7 @@ Hacé las preguntas en el mismo idioma que use el cliente/facilitador. Tu objeti
 Tus preguntas deben cubrir colectivamente:
 
 1. **Requisitos funcionales (capacidades).** Qué debe *poder hacer* el sistema, como capacidades discretas. Se siembra desde el Alcance del Brief + los ítems del Handoff.
-2. **Reglas de negocio y lógica.** Distinto de la capacidad: "el sistema permite registrar un cliente" es funcional; "no se puede registrar sin CUIT válido" o "el descuento no supera 20% salvo aprobación" es regla. Acá viven las **reglas de cálculo**. Es la zona donde más se esconde la ambigüedad. *Guard para todo cálculo que dependa del tiempo: además de la fórmula, tiene que declarar su **corte** —hasta cuándo cuenta— para las entidades que salieron del ciclo de vida activo (vendidas, cerradas, dadas de baja, archivadas). Una fórmula "desde tal fecha hasta hoy" sigue corriendo para siempre sobre algo que ya dejó de estar vivo, y eso casi nunca es lo que el negocio quiere; preguntá el corte en vez de asumirlo.*
+2. **Reglas de negocio y lógica.** Distinto de la capacidad: "el sistema permite registrar un cliente" es funcional; "no se puede registrar sin CUIT válido" o "el descuento no supera 20% salvo aprobación" es regla. Acá viven las **reglas de cálculo**. Es la zona donde más se esconde la ambigüedad. *Guard para todo cálculo que dependa del tiempo: además de la fórmula, tiene que declarar su **corte** —hasta cuándo cuenta— para las entidades que salieron del ciclo de vida activo (vendidas, cerradas, dadas de baja, archivadas). Una fórmula "desde tal fecha hasta hoy" sigue corriendo para siempre sobre algo que ya dejó de estar vivo, y eso casi nunca es lo que el negocio quiere; preguntá el corte en vez de asumirlo. Y no alcanza con definir el corte para el caso obvio: recorré **uno por uno todos los estados terminales** y verificá que cada uno tenga una fecha de corte que exista de verdad. Es fácil escribir "el corte es la fecha de venta o de baja" y no notar que un estado terminal como "rota" no tiene ninguna de las dos; ese estado queda sin corte definido y el cálculo vuelve a correr para siempre justo donde nadie mira. Si un estado terminal no tiene una fecha propia, hay que decidir cuál usa.*
 3. **Datos del dominio (perspectiva de negocio).** Qué información maneja el negocio y qué significa: entidades, **catálogos** (los ABM del Handoff), **modelo de historial/eventos**. *Guard: qué información y qué significa, nunca tipos de dato, tablas ni esquema —eso es Etapa 2.*
 4. **Roles y permisos.** La matriz **actor → capacidad** (qué rol puede ejecutar qué). El *porqué* de cada autorización se apoya en una regla de negocio (dimensión 2), pero la matriz vive acá.
 5. **Requisitos no funcionales (atributos de calidad).** Performance, disponibilidad, seguridad-como-requisito, usabilidad, escala. *Guard duro: medibles y describen el qué-tan-bien, nunca el cómo.* Ejemplo: "P95 < 2s con 500 usuarios concurrentes" es Etapa 1; "usamos caché + balanceador" es Etapa 2.
@@ -157,18 +157,41 @@ Por cada dimensión, **o se cierra una decisión, o se registra como supuesto co
 - Si una respuesta está incompleta → volvé a preguntar.
 - No avances mientras queden dimensiones sin cerrar y sin supuesto registrado.
 
-### 7. Pregunta de cierre (obligatoria, siempre la última antes del gate)
+#### Todo valor que no vino del Brief ni del cliente se registra como supuesto
+
+Especificar bien exige poner números concretos, y muchos de esos números los vas a proponer vos: targets de performance, volúmenes objetivo, umbrales, límites de tamaño y cantidad, monedas o unidades admitidas, cantidad de reintentos. **Ponerlos está bien y es necesario** —un requisito sin número no es verificable— pero cada valor que no salió del Brief ni de una respuesta del cliente lleva su supuesto con dueño y forma de validación.
+
+El supuesto **no saca el valor del cuerpo del SRS**: la regla sigue diciendo el número exacto, con la misma precisión, para que quien implemente no tenga nada que adivinar. Lo único que agrega es el rastro de su origen. Sin esa marca, a las semanas nadie distingue lo que el cliente pidió de lo que vos decidiste, y cualquiera de los dos se defiende o se cambia con la misma (in)seguridad.
+
+Cuidado especialmente con el margen de holgura: multiplicar la escala declarada del Brief "por si crece" es una decisión de diseño, no un dato del cliente. Si el Brief dice 50 y especificás para 500, el 500 va con supuesto.
+
+### 7. Chequeo de consistencia (antes de la pregunta de cierre)
+
+Un requisito puede ser verificable, trazable y estar completo, y el conjunto igual estar mal: **dos requisitos que se contradicen entre sí**. Los pasos anteriores revisan cada requisito contra su origen; este revisa el conjunto contra sí mismo, que es lo único que detecta una contradicción.
+
+Importa especialmente porque este SRS suele ser el insumo de una implementación asistida por IA. Frente a una contradicción o un caso sin definir, una persona pregunta; un implementador automático elige una opción plausible en silencio, no deja rastro de que eligió, y puede elegir distinto la próxima vez. Una ambigüedad que a un humano le cuesta un mensaje de Slack acá se convierte en comportamiento arbitrario.
+
+Antes de la pregunta de cierre, recorré el conjunto y verificá:
+
+1. **Pares incompatibles.** Cruzá las reglas de negocio entre sí y contra los criterios de aceptación de los RF que las invocan. Buscá dos enunciados que no puedan ser ciertos a la vez. El caso típico: una regla define un valor derivado en función del estado actual, y el criterio de un RF afirma que editar el registro no altera ese valor — si el estado se puede editar, las dos cosas no se sostienen.
+2. **Cobertura de valores enumerados.** Por cada conjunto cerrado de valores que declares (estados, categorías, tipos de comprador, roles), verificá que **cada valor** tenga comportamiento definido en **todas** las reglas que dependen de ese conjunto. Alcanza con que un solo valor quede afuera para que haya un caso sin definir; y suele quedar afuera justo el valor menos obvio, no el principal.
+3. **Fuente única por decisión.** Cada regla o valor se enuncia en **un solo lugar** del SRS; el resto lo referencia por ID. Si la misma decisión aparece dicha dos veces (p. ej. un límite en una regla de negocio y otra vez como métrica de un RNF), no son dos requisitos: son dos fuentes de verdad que pueden divergir, y quien implemente no tiene forma de saber cuál manda. Dejá una y referenciá.
+4. **Consistencia de prioridad.** Un requisito must-v1 no puede depender de otro diferido o fuera de alcance. Si depende, o sube el dependido o baja el dependiente.
+
+Lo que encuentres se resuelve acá: se elige cuál enunciado gana y se corrige el otro, o se define el caso faltante. Si la resolución requiere una decisión del cliente, va como supuesto —pero la contradicción no puede quedar en pie: dos requisitos que se contradicen no son un supuesto, son un defecto.
+
+### 8. Pregunta de cierre (obligatoria, siempre la última antes del gate)
 
 Una vez que las dimensiones están cerradas o registradas como supuesto, y **antes** de pasar al gate, hacé siempre esta pregunta, sin excepción:
 
 "Antes de armar el SRS: ¿hay algún requisito, regla o caso que quieras agregar, corregir o aclarar?"
 
-- Si agrega o cambia algo → volvé al paso 6.
-- Si no hay nada más → recién ahí pasá al gate del paso 8.
+- Si agrega o cambia algo → volvé al paso 6 y volvé a correr el chequeo de consistencia del paso 7.
+- Si no hay nada más → recién ahí pasá al gate del paso 9.
 
 Esta pregunta existe para capturar lo que las dimensiones no anticiparon. No la reemplaces ni la saltees aunque parezca completo.
 
-### 8. Confirmar antes de escribir (gate)
+### 9. Confirmar antes de escribir (gate)
 
 Cuando todo esté cerrado, preguntá:
 
@@ -176,9 +199,9 @@ Cuando todo esté cerrado, preguntá:
 
 No lo escribas todavía.
 
-### 9. Redactar y guardar el archivo
+### 10. Redactar y guardar el archivo
 
-Solo si el facilitador confirma explícitamente en el paso 8, escribí el artefacto final con el schema de abajo **y guardalo como archivo**, no solo en el chat.
+Solo si el facilitador confirma explícitamente en el paso 9, escribí el artefacto final con el schema de abajo **y guardalo como archivo**, no solo en el chat.
 
 **Nombre del archivo:**
 
@@ -190,7 +213,7 @@ Donde `<slug-del-proyecto>` es el título del proyecto en minúsculas, sin acent
 
 Después de guardarlo, confirmá al facilitador el nombre y la ubicación del archivo creado.
 
-### 10. Handoff a la Etapa 2
+### 11. Handoff a la Etapa 2
 
 El SRS termina con una sección de handoff que lista todas las decisiones técnicas que aparecieron y **no** se resolvieron (el *cómo* de cada RNF, elección de stack, diseño de integraciones no impuestas). Es la entrada del gate de arquitectura y de la skill de Etapa 2. Así la cadena no se corta.
 
@@ -380,8 +403,11 @@ Decisiones técnicas que aparecieron y NO se resolvieron acá:
 - Los no-goals que el Brief ya declaró se propagan a `Fuera de alcance del v1`, no se convierten en requisitos con ID. Diferido con criterios escritos sí es requisito; diferido sin especificar, no.
 - Lo que la elicitación descubre y el Brief no tenía se puede sumar, pero se marca como alcance agregado en E1 y no entra a must-v1 por inercia; una integración no dominada que agranda el v1 va, por default, diferida o a revisión del decisor.
 - Antes de cerrar, hacé el barrido de completitud contra el Anexo en dos niveles: (a) todo concepto o capacidad termina en un requisito o en `Fuera de alcance del v1`; (b) todo calificador declarado —único, obligatorio, configurable, derivado, inmutable, valores admitidos— aterriza en una regla de negocio con su borde. Lo que no aparece es hueco a cerrar o supuesto.
-- Toda regla de cálculo que dependa del tiempo declara su corte para entidades fuera del ciclo de vida activo (vendidas, cerradas, de baja). Preguntá el corte, no lo asumas.
-- Todo RNF es medible: métrica y valor objetivo, o no es un RNF cerrado.
+- Toda regla de cálculo que dependa del tiempo declara su corte para entidades fuera del ciclo de vida activo (vendidas, cerradas, de baja), y el corte se verifica **estado terminal por estado terminal**: si alguno no tiene una fecha propia que exista, hay que decidir cuál usa. Preguntá el corte, no lo asumas.
+- Antes de la pregunta de cierre, corré el chequeo de consistencia: pares incompatibles entre reglas y criterios, cobertura de todos los valores de cada conjunto enumerado, una sola fuente por decisión, y ningún must-v1 que dependa de algo diferido. Dos requisitos que se contradicen no son un supuesto: son un defecto y se resuelven acá.
+- Cada decisión se enuncia en un solo lugar y el resto la referencia por ID. La misma regla dicha dos veces son dos fuentes de verdad que divergen.
+- Todo valor que no vino del Brief ni de una respuesta del cliente (targets, umbrales, límites, unidades, márgenes de holgura sobre la escala declarada) va con supuesto y dueño. El supuesto no saca el número del cuerpo: el requisito sigue siendo igual de preciso, solo queda el rastro de su origen.
+- Todo RNF es medible: métrica y valor objetivo, o no es un RNF cerrado. Un RNF cuya métrica reenuncia un RF o una regla de negocio no es un RNF: es duplicación.
 - Los datos del dominio se describen por significado, nunca por tipo/tabla/esquema. La UI no es dimensión de esta etapa.
 - El detalle técnico de la entrada no se traslada a las secciones de negocio: contrato impuesto → Anexo; diseño → Handoff a Etapa 2.
 - No dejes ninguna dimensión en ambigüedad: cerrala o registrala como supuesto con dueño y validación. Lo que depende del cliente lleva dueño = cliente.
