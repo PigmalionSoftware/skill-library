@@ -1,15 +1,15 @@
 ---
 name: elicit-requirements
-description: 'Convierte un Project Brief ya validado (Etapa 0) en un SRS reducido: requisitos funcionales y no funcionales verificables, trazables y sin ambigüedad, que sirven de entrada de diseño para la Etapa 2 (Arquitectura). Es la Etapa 1 (Requisitos) del flujo de proyecto, conducida por un facilitador interno (PM técnico o líder técnico) que trabaja sobre el Brief y sube al cliente solo las decisiones que lo requieren. Úsala SIEMPRE que exista un Project Brief cerrado y haya que "sacar los requisitos", "armar el SRS", "detallar qué tiene que hacer el sistema", "resolver el handoff a requisitos" o "pasar del brief a los requisitos", aunque no usen esas palabras exactas. NO es para el encuadre de negocio inicial (eso es discover-project, Etapa 0), NO decide arquitectura ni stack (eso es Etapa 2), y NO cierra el requisito de un ticket dentro de un repo existente (para eso está close-requirement).'
+description: 'ETAPA 1: Convierte un Project Brief ya validado (Etapa 0) en un SRS reducido: requisitos funcionales y no funcionales verificables, trazables y sin ambigüedad, que sirven de entrada de diseño para la Etapa 2 (Arquitectura). Es la Etapa 1 (Requisitos) del flujo de proyecto, conducida por un facilitador interno (PM técnico o líder técnico) que trabaja sobre el Brief y sube al cliente solo las decisiones que lo requieren. Úsala SIEMPRE que exista un Project Brief cerrado y haya que "sacar los requisitos", "armar el SRS", "detallar qué tiene que hacer el sistema", "resolver el handoff a requisitos" o "pasar del brief a los requisitos", aunque no usen esas palabras exactas. NO es para el encuadre de negocio inicial (eso es discover-project, Etapa 0), NO decide arquitectura ni stack (eso es Etapa 2), y NO cierra el requisito de un ticket dentro de un repo existente (para eso está close-requirement).'
 ---
 
 # Elicitación de Requisitos
 
 ## Propósito
 
-Ayudar a un facilitador interno a transformar un **Project Brief validado** (Etapa 0) en un **SRS reducido**: la especificación de **qué tiene que hacer el sistema y bajo qué condiciones se considera bien hecho**, todavía sin decir *cómo* se construye.
+Ayudar a un facilitador interno a transformar un **Project Brief validado** (Etapa 0) en un **SRS reducido**: la especificación de **qué tiene que hacer el sistema y bajo qué condiciones se considera bien hecho**, todavía sin decir _cómo_ se construye.
 
-"SRS reducido" es la versión podada del clásico *Software Requirements Specification*: conserva lo que da valor —requisitos funcionales y no funcionales **no ambiguos, verificables y trazables**— y descarta la ceremonia documental del formato formal. Es el escalón que traduce el problema de negocio del Brief a requisitos accionables, y es la **entrada de diseño** que el gate de arquitectura de la Etapa 2 revisa y aprueba (ISO 9001 cl. 8.3).
+"SRS reducido" es la versión podada del clásico _Software Requirements Specification_: conserva lo que da valor —requisitos funcionales y no funcionales **no ambiguos, verificables y trazables**— y descarta la ceremonia documental del formato formal. Es el escalón que traduce el problema de negocio del Brief a requisitos accionables, y es la **entrada de diseño** que el gate de arquitectura de la Etapa 2 revisa y aprueba (ISO 9001 cl. 8.3).
 
 El Brief es la raíz de la cadena de trazabilidad; este artefacto es el **siguiente eslabón**: todo requisito nace de algo del Brief. Por eso:
 
@@ -26,7 +26,7 @@ Esta skill vive entre dos fronteras y las respeta en ambos sentidos.
 
 **No mira hacia adelante (Etapa 2 y 3).** No produce:
 
-- decisiones de arquitectura, stack, componentes, esquema de datos o *cómo* se cumple un RNF (eso es Etapa 2),
+- decisiones de arquitectura, stack, componentes, esquema de datos o _cómo_ se cumple un RNF (eso es Etapa 2),
 - historias de usuario, escenarios Given-When-Then ni tickets (eso es Etapa 3).
 
 El guard central de la etapa es **"qué / qué-tan-bien, nunca cómo"**. Cuando aparezca una decisión técnica (elección de tecnología, diseño de una integración no impuesta, forma de cumplir un RNF), no la resuelvas: anotala en el **Handoff a Etapa 2**. Así la cadena no se corta.
@@ -70,7 +70,7 @@ Consecuencia directa: distinguí siempre entre lo que podés cerrar con el Brief
 - exigir que cada RNF sea medible,
 - reconocer una restricción o dependencia externa real temprano.
 
-No se usa para elegir tecnología, diseñar componentes, definir el esquema de datos ni resolver *cómo* se cumple un requisito. Si te descubrís pensando "esto lo haríamos con X" o "esto va en tal tabla", esa es la señal de que te saliste del espacio del *qué* y te metiste en la Etapa 2.
+No se usa para elegir tecnología, diseñar componentes, definir el esquema de datos ni resolver _cómo_ se cumple un requisito. Si te descubrís pensando "esto lo haríamos con X" o "esto va en tal tabla", esa es la señal de que te saliste del espacio del _qué_ y te metiste en la Etapa 2.
 
 ---
 
@@ -87,9 +87,10 @@ Antes de hacer preguntas nuevas:
 1. **Convertí cada ítem del "Handoff a Etapa 1" en un ítem de trabajo abierto** que hay que cerrar o volver supuesto. Esa lista es el esqueleto inicial de esta etapa, no un punto de partida genérico.
 2. **Reconciliá con el Anexo.** Buscá qué insumos técnicos que el cliente ya entregó responden (parcial o totalmente) a esos ítems, para no volver a preguntar lo que ya está. El Anexo es evidencia: se valida y se traduce a requisito, no se copia como requisito. Este cruce es además un **chequeo de completitud** en dos niveles:
    - **Conceptos y capacidades.** Cada entidad, atributo, catálogo y capacidad que figure en el Anexo tiene que terminar reflejado en algún requisito o marcado explícitamente como fuera de alcance.
-   - **Calificadores y restricciones.** No basta con recoger el concepto: los adjetivos que lo califican son requisitos en sí mismos y se pierden con facilidad porque parecen decoración del atributo. Si el Anexo dice que algo es *único*, *obligatorio*, *configurable*, *derivado*, *inmutable* o que solo admite ciertos valores, ese calificador tiene que aterrizar en una **regla de negocio** explícita, con su borde correspondiente en "Comportamiento ante fallos". Un atributo recogido sin su calificador es una restricción de integridad perdida en silencio (p. ej. tomar "identificador" y perder "único").
+   - **Calificadores y restricciones.** No basta con recoger el concepto: los adjetivos que lo califican son requisitos en sí mismos y se pierden con facilidad porque parecen decoración del atributo. Si el Anexo dice que algo es _único_, _obligatorio_, _configurable_, _derivado_, _inmutable_ o que solo admite ciertos valores, ese calificador tiene que aterrizar en una **regla de negocio** explícita, con su borde correspondiente en "Comportamiento ante fallos". Un atributo recogido sin su calificador es una restricción de integridad perdida en silencio (p. ej. tomar "identificador" y perder "único").
 
    Lo que no aparece ni en un requisito ni como no-goal es un hueco silencioso —no lo dejes pasar por el solo hecho de estar en el Anexo—: cerralo o registralo como supuesto.
+
 3. **Verificá la integridad del encuadre.** Si para derivar requisitos te falta algo que debía venir cerrado del Brief (p. ej. un objetivo sin métrica, un alcance contradictorio, un decisor sin definir), **rebotá a la Etapa 0** con una nota de qué falta, en vez de resolverlo acá.
 
 ### 3. Triage de granularidad (obligatorio cuando la entrada trae detalle técnico)
@@ -114,11 +115,11 @@ Hacé las preguntas en el mismo idioma que use el cliente/facilitador. Tu objeti
 
 Tus preguntas deben cubrir colectivamente:
 
-1. **Requisitos funcionales (capacidades).** Qué debe *poder hacer* el sistema, como capacidades discretas. Se siembra desde el Alcance del Brief + los ítems del Handoff.
-2. **Reglas de negocio y lógica.** Distinto de la capacidad: "el sistema permite registrar un cliente" es funcional; "no se puede registrar sin CUIT válido" o "el descuento no supera 20% salvo aprobación" es regla. Acá viven las **reglas de cálculo**. Es la zona donde más se esconde la ambigüedad. *Guard para todo cálculo que dependa del tiempo: además de la fórmula, tiene que declarar su **corte** —hasta cuándo cuenta— para las entidades que salieron del ciclo de vida activo (vendidas, cerradas, dadas de baja, archivadas). Una fórmula "desde tal fecha hasta hoy" sigue corriendo para siempre sobre algo que ya dejó de estar vivo, y eso casi nunca es lo que el negocio quiere; preguntá el corte en vez de asumirlo. Y no alcanza con definir el corte para el caso obvio: recorré **uno por uno todos los estados terminales** y verificá que cada uno tenga una fecha de corte que exista de verdad. Es fácil escribir "el corte es la fecha de venta o de baja" y no notar que un estado terminal como "rota" no tiene ninguna de las dos; ese estado queda sin corte definido y el cálculo vuelve a correr para siempre justo donde nadie mira. Si un estado terminal no tiene una fecha propia, hay que decidir cuál usa.*
-3. **Datos del dominio (perspectiva de negocio).** Qué información maneja el negocio y qué significa: entidades, **catálogos** (los ABM del Handoff), **modelo de historial/eventos**. *Guard: qué información y qué significa, nunca tipos de dato, tablas ni esquema —eso es Etapa 2.*
-4. **Roles y permisos.** La matriz **actor → capacidad** (qué rol puede ejecutar qué). El *porqué* de cada autorización se apoya en una regla de negocio (dimensión 2), pero la matriz vive acá.
-5. **Requisitos no funcionales (atributos de calidad).** Performance, disponibilidad, seguridad-como-requisito, usabilidad, escala. *Guard duro: medibles y describen el qué-tan-bien, nunca el cómo.* Ejemplo: "P95 < 2s con 500 usuarios concurrentes" es Etapa 1; "usamos caché + balanceador" es Etapa 2.
+1. **Requisitos funcionales (capacidades).** Qué debe _poder hacer_ el sistema, como capacidades discretas. Se siembra desde el Alcance del Brief + los ítems del Handoff.
+2. **Reglas de negocio y lógica.** Distinto de la capacidad: "el sistema permite registrar un cliente" es funcional; "no se puede registrar sin CUIT válido" o "el descuento no supera 20% salvo aprobación" es regla. Acá viven las **reglas de cálculo**. Es la zona donde más se esconde la ambigüedad. _Guard para todo cálculo que dependa del tiempo: además de la fórmula, tiene que declarar su **corte** —hasta cuándo cuenta— para las entidades que salieron del ciclo de vida activo (vendidas, cerradas, dadas de baja, archivadas). Una fórmula "desde tal fecha hasta hoy" sigue corriendo para siempre sobre algo que ya dejó de estar vivo, y eso casi nunca es lo que el negocio quiere; preguntá el corte en vez de asumirlo. Y no alcanza con definir el corte para el caso obvio: recorré **uno por uno todos los estados terminales** y verificá que cada uno tenga una fecha de corte que exista de verdad. Es fácil escribir "el corte es la fecha de venta o de baja" y no notar que un estado terminal como "rota" no tiene ninguna de las dos; ese estado queda sin corte definido y el cálculo vuelve a correr para siempre justo donde nadie mira. Si un estado terminal no tiene una fecha propia, hay que decidir cuál usa._
+3. **Datos del dominio (perspectiva de negocio).** Qué información maneja el negocio y qué significa: entidades, **catálogos** (los ABM del Handoff), **modelo de historial/eventos**. _Guard: qué información y qué significa, nunca tipos de dato, tablas ni esquema —eso es Etapa 2._
+4. **Roles y permisos.** La matriz **actor → capacidad** (qué rol puede ejecutar qué). El _porqué_ de cada autorización se apoya en una regla de negocio (dimensión 2), pero la matriz vive acá.
+5. **Requisitos no funcionales (atributos de calidad).** Performance, disponibilidad, seguridad-como-requisito, usabilidad, escala. _Guard duro: medibles y describen el qué-tan-bien, nunca el cómo._ Ejemplo: "P95 < 2s con 500 usuarios concurrentes" es Etapa 1; "usamos caché + balanceador" es Etapa 2.
 6. **Interfaces externas / integraciones (contrato funcional).** Qué sistema, qué información de negocio fluye en cada dirección, y por qué. El contrato técnico exacto es Etapa 2, **salvo** que el cliente lo tenga fijo (restricción dura) → se preserva en el Anexo, no se diseña.
 7. **Comportamiento ante fallos y bordes.** Qué pasa cuando algo sale mal, y los **fallbacks de funcionalidades no bloqueantes**. Va como dimensión propia justamente porque el happy path es fácil y los modos de falla se olvidan sistemáticamente.
 8. **Restricciones y su traducción a requisitos.** No se trata de descubrir restricciones nuevas (deadline, presupuesto, regulatorio ya vienen del Brief), sino de **traducir las que generan requisitos** a algo concreto: regulatorio "derecho al borrado" → RF "el usuario puede solicitar la baja de sus datos". Las que no generan requisito quedan como límites que acotan la Etapa 2.
@@ -137,15 +138,15 @@ La elicitación no solo cierra los ítems abiertos del Brief: también **descubr
 
 No son dimensiones: son propiedades que **todo requisito arrastra**, lo produzcas donde lo produzcas.
 
-- **Verificabilidad.** Todo RF y todo RNF testeable lleva **criterios de aceptación a nivel de requisito**: condición → resultado esperado, en lenguaje de verificación. **No** son Given-When-Then ni pasos de UI (eso es la descomposición en historias de la Etapa 3; acá decís *qué condición debe cumplirse*, no *el escenario paso a paso*). Un requisito no verificable se reescribe hasta que lo sea, o se vuelve supuesto. **Corolario, sin excepción: un requisito sin criterios de aceptación no es un requisito todavía.** Si no podés escribirle criterios porque nadie lo especificó, no le pongas un ID y lo dejes vacío ni con un "a definir": no pertenece al cuerpo del SRS. Va a la lista de fuera de alcance del v1 (ver abajo) o a un supuesto.
+- **Verificabilidad.** Todo RF y todo RNF testeable lleva **criterios de aceptación a nivel de requisito**: condición → resultado esperado, en lenguaje de verificación. **No** son Given-When-Then ni pasos de UI (eso es la descomposición en historias de la Etapa 3; acá decís _qué condición debe cumplirse_, no _el escenario paso a paso_). Un requisito no verificable se reescribe hasta que lo sea, o se vuelve supuesto. **Corolario, sin excepción: un requisito sin criterios de aceptación no es un requisito todavía.** Si no podés escribirle criterios porque nadie lo especificó, no le pongas un ID y lo dejes vacío ni con un "a definir": no pertenece al cuerpo del SRS. Va a la lista de fuera de alcance del v1 (ver abajo) o a un supuesto.
 - **Trazabilidad.** Todo requisito traza hacia atrás a algo del Brief (alcance, objetivo o ítem del Handoff), vía un campo `traza-a`. Un requisito que no traza a nada es una de dos cosas: **scope creep** (sacalo) o un **hueco del Brief** (rebote a Etapa 0).
-- **Prioridad v1.** Cada requisito se marca *must-v1* o *diferido*, consistente con el alcance de v1 del Brief. Alimenta el backlog de la Etapa 3.
+- **Prioridad v1.** Cada requisito se marca _must-v1_ o _diferido_, consistente con el alcance de v1 del Brief. Alimenta el backlog de la Etapa 3.
 
 #### Fuera de alcance: no lo disfraces de requisito
 
 El barrido de completitud del paso 2 pide que nada quede sin destino, pero **"tener un destino" no significa "ser un requisito"**. Distinguí dos cosas:
 
-- **Requisito diferido:** está especificado —tiene enunciado y criterios de aceptación verificables— y simplemente no entra al v1. Vive en el cuerpo del SRS con su ID y prioridad *diferido*.
+- **Requisito diferido:** está especificado —tiene enunciado y criterios de aceptación verificables— y simplemente no entra al v1. Vive en el cuerpo del SRS con su ID y prioridad _diferido_.
 - **Fuera de alcance:** los no-goals que el Brief ya declaró y lo que se decide no hacer durante esta etapa. **No recibe ID de requisito ni entra al cuerpo.** Va a la sección `## Fuera de alcance del v1`, como lista breve con el motivo y el destino (v1.x, v2, descartado).
 
 Convertir un no-goal del Brief en un requisito con ID vacío rompe dos cosas: contradice una decisión de alcance que el Brief ya tomó, y ensucia el insumo de la Etapa 3, que podría generar tickets para algo que nadie pidió construir. Lo que el Brief ya declaró fuera de alcance se **propaga como fuera de alcance**, no se reabre acá.
@@ -174,14 +175,17 @@ Importa especialmente porque este SRS suele ser el insumo de una implementación
 Antes de la pregunta de cierre, recorré el conjunto y verificá:
 
 1. **Pares incompatibles.** Cruzá las reglas de negocio entre sí y contra los criterios de aceptación de los RF que las invocan. Buscá dos enunciados que no puedan ser ciertos a la vez. El caso típico: una regla define un valor derivado en función del estado actual, y el criterio de un RF afirma que editar el registro no altera ese valor — si el estado se puede editar, las dos cosas no se sostienen.
-2. **Cobertura de valores enumerados.** Por cada conjunto cerrado de valores que declares (estados, categorías, tipos de comprador, roles), verificá que **cada valor** tenga comportamiento definido en **todas** las reglas que dependen de ese conjunto. Alcanza con que un solo valor quede afuera para que haya un caso sin definir; y suele quedar afuera justo el valor menos obvio, no el principal.
+2. **Cobertura de valores enumerados.** Por cada conjunto cerrado de valores que declares (estados, categorías, tipos de comprador), verificá que **cada valor** tenga comportamiento definido en **todas** las reglas que dependen de ese conjunto. Alcanza con que un solo valor quede afuera para que haya un caso sin definir; y suele quedar afuera justo el valor menos obvio, no el principal.
+
+   Aplicá el mismo control a los **actores**, que es donde más se escapa porque el rol se siente como contexto y no como un valor a cubrir. Dos verificaciones concretas: **(a) todo actor de la matriz de roles tiene un origen definido** —algún requisito establece cómo alguien llega a ser ese actor—, y **(b) la matriz cubre todos los RF**, sin ninguno huérfano. El caso que se repite en cualquier sistema con un rol privilegiado es el del primero de todos: si solo un administrador puede crear administradores, ningún requisito crea al primero, y el círculo no cierra. Verificá también qué pasa si el último actor de un rol privilegiado se desactiva: si con eso nadie puede volver a otorgar ese rol, el sistema queda sin salida.
+
 3. **Fuente única por decisión.** Cada regla o valor se enuncia en **un solo lugar** del SRS; el resto lo referencia por ID. Si la misma decisión aparece dicha dos veces (p. ej. un límite en una regla de negocio y otra vez como métrica de un RNF), no son dos requisitos: son dos fuentes de verdad que pueden divergir, y quien implemente no tiene forma de saber cuál manda. Dejá una y referenciá.
 4. **Consistencia de prioridad.** Un requisito must-v1 no puede depender de otro diferido o fuera de alcance. Si depende, o sube el dependido o baja el dependiente.
 5. **Conflicto con lo que el Brief se comprometió a lograr.** Cruzá el conjunto contra los **objetivos medibles y los criterios de éxito** del Brief. Un requisito puede trazar correctamente a algo del Brief y sin embargo dejar sin cumplir lo que el Brief declaró que el v1 iba a conseguir. Ejemplo del patrón: el criterio de éxito dice que todo cambio de cierto tipo queda registrado y consultable, y una regla decide que corregir uno de esos datos es una edición normal que no genera registro. Cada pieza es defendible por separado; juntas incumplen la promesa.
 
 Lo que encuentres se resuelve acá: se elige cuál enunciado gana y se corrige el otro, o se define el caso faltante. Si la resolución requiere una decisión del cliente, va como supuesto —pero la contradicción no puede quedar en pie: dos requisitos que se contradicen no son un supuesto, son un defecto.
 
-**Un conflicto con un objetivo o criterio de éxito del Brief no se archiva como riesgo.** Esta es la salida fácil y hay que resistirla: escribir un riesgo bien redactado se lee como diligencia, deja el problema descrito con precisión y no lo resuelve. Un riesgo sirve para lo que *podría* salir mal; no para blanquear un requisito que incumple lo que el proyecto declaró que iba a lograr. Frente a uno de estos, hay dos salidas legítimas y ninguna más: **corregir el requisito** para que la promesa se cumpla, o **escalarlo al decisor** como decisión explícita de bajar la vara que el Brief había fijado. Si el decisor la baja, eso se registra como tal —decisión de alcance, con quién la tomó— no como un riesgo que quedó anotado.
+**Un conflicto con un objetivo o criterio de éxito del Brief no se archiva como riesgo.** Esta es la salida fácil y hay que resistirla: escribir un riesgo bien redactado se lee como diligencia, deja el problema descrito con precisión y no lo resuelve. Un riesgo sirve para lo que _podría_ salir mal; no para blanquear un requisito que incumple lo que el proyecto declaró que iba a lograr. Frente a uno de estos, hay dos salidas legítimas y ninguna más: **corregir el requisito** para que la promesa se cumpla, o **escalarlo al decisor** como decisión explícita de bajar la vara que el Brief había fijado. Si el decisor la baja, eso se registra como tal —decisión de alcance, con quién la tomó— no como un riesgo que quedó anotado.
 
 El motivo es el mismo que sostiene toda la etapa: si un implementador automático lee el SRS, no lee los riesgos. Implementa la regla tal como está escrita, y el incumplimiento entra al producto con el defecto documentado a un costado.
 
@@ -220,7 +224,7 @@ Después de guardarlo, confirmá al facilitador el nombre y la ubicación del ar
 
 ### 11. Handoff a la Etapa 2
 
-El SRS termina con una sección de handoff que lista todas las decisiones técnicas que aparecieron y **no** se resolvieron (el *cómo* de cada RNF, elección de stack, diseño de integraciones no impuestas). Es la entrada del gate de arquitectura y de la skill de Etapa 2. Así la cadena no se corta.
+El SRS termina con una sección de handoff que lista todas las decisiones técnicas que aparecieron y **no** se resolvieron (el _cómo_ de cada RNF, elección de stack, diseño de integraciones no impuestas). Es la entrada del gate de arquitectura y de la skill de Etapa 2. Así la cadena no se corta.
 
 ---
 
@@ -310,6 +314,12 @@ Todos los requisitos están cerrados o registrados como supuestos con dueño y f
 
 <3-4 líneas que reponen el problema y el alcance del v1 tomados del Brief, para que el SRS se entienda sin tener el Brief al lado. No es re-discovery: es el ancla. No re-litigar el encuadre.>
 
+## Decisiones de alcance tomadas en Etapa 1
+
+> Solo si esta etapa escaló algo al decisor. Es el destino de lo que el chequeo de consistencia (paso 7) encontró en conflicto con un objetivo o criterio de éxito del Brief y el decisor resolvió bajando la vara: se registra acá como decisión, con quién la tomó y cuándo, **nunca como riesgo**. También va acá cualquier decisión de esta etapa que cambie el alcance del v1 respecto del Brief. Si no hubo ninguna, omitir la sección.
+
+- **<decisión>** — Tomada por: <decisor> (<fecha>). Consecuencia aceptada: <qué objetivo o criterio de éxito del Brief queda afectado y de qué forma>.
+
 ## Requisitos funcionales
 
 > Cada RF: enunciado como capacidad (no como solución). Referencia las RN que aplica.
@@ -342,9 +352,9 @@ Todos los requisitos están cerrados o registrados como supuestos con dueño y f
 
 > Matriz actor → capacidad. El porqué de cada restricción se apoya en la RN correspondiente.
 
-| Rol | Capacidades (RF) que puede ejecutar | Regla que lo justifica |
-|-----|-------------------------------------|------------------------|
-| <rol> | <RF-<slug>-0x, …> | <RN-<slug>-0x> |
+| Rol   | Capacidades (RF) que puede ejecutar | Regla que lo justifica |
+| ----- | ----------------------------------- | ---------------------- |
+| <rol> | <RF-<slug>-0x, …>                   | <RN-<slug>-0x>         |
 
 ## Requisitos no funcionales
 
@@ -409,8 +419,8 @@ Decisiones técnicas que aparecieron y NO se resolvieron acá:
 - Lo que la elicitación descubre y el Brief no tenía se puede sumar, pero se marca como alcance agregado en E1 y no entra a must-v1 por inercia; una integración no dominada que agranda el v1 va, por default, diferida o a revisión del decisor.
 - Antes de cerrar, hacé el barrido de completitud contra el Anexo en dos niveles: (a) todo concepto o capacidad termina en un requisito o en `Fuera de alcance del v1`; (b) todo calificador declarado —único, obligatorio, configurable, derivado, inmutable, valores admitidos— aterriza en una regla de negocio con su borde. Lo que no aparece es hueco a cerrar o supuesto.
 - Toda regla de cálculo que dependa del tiempo declara su corte para entidades fuera del ciclo de vida activo (vendidas, cerradas, de baja), y el corte se verifica **estado terminal por estado terminal**: si alguno no tiene una fecha propia que exista, hay que decidir cuál usa. Preguntá el corte, no lo asumas.
-- Antes de la pregunta de cierre, corré el chequeo de consistencia: pares incompatibles entre reglas y criterios, cobertura de todos los valores de cada conjunto enumerado, una sola fuente por decisión, ningún must-v1 que dependa de algo diferido, y ningún requisito que incumpla un objetivo o criterio de éxito del Brief. Dos requisitos que se contradicen no son un supuesto: son un defecto y se resuelven acá.
-- Un requisito que incumple un objetivo o criterio de éxito del Brief no se archiva como riesgo: se corrige, o se escala al decisor como decisión explícita de bajar la vara del Brief. Un riesgo describe lo que podría salir mal, no blanquea una promesa incumplida.
+- Antes de la pregunta de cierre, corré el chequeo de consistencia: pares incompatibles entre reglas y criterios, cobertura de todos los valores de cada conjunto enumerado y de todos los actores (cada rol con origen definido, ningún RF huérfano en la matriz), una sola fuente por decisión, ningún must-v1 que dependa de algo diferido, y ningún requisito que incumpla un objetivo o criterio de éxito del Brief. Dos requisitos que se contradicen no son un supuesto: son un defecto y se resuelven acá.
+- Un requisito que incumple un objetivo o criterio de éxito del Brief no se archiva como riesgo: se corrige, o se escala al decisor y se registra en `Decisiones de alcance tomadas en Etapa 1` con quién decidió y cuándo. Un riesgo describe lo que podría salir mal, no blanquea una promesa incumplida.
 - Cada decisión se enuncia en un solo lugar y el resto la referencia por ID. La misma regla dicha dos veces son dos fuentes de verdad que divergen.
 - Todo valor que no vino del Brief ni de una respuesta del cliente (targets, umbrales, límites, unidades, márgenes de holgura sobre la escala declarada) va con supuesto y dueño. El supuesto no saca el número del cuerpo: el requisito sigue siendo igual de preciso, solo queda el rastro de su origen.
 - Todo RNF es medible: métrica y valor objetivo, o no es un RNF cerrado. Un RNF cuya métrica reenuncia un RF o una regla de negocio no es un RNF: es duplicación.
