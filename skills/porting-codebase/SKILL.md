@@ -51,8 +51,8 @@ a task.
 2. If it is not an existing directory, **stop** and report that the port cannot be resumed.
    Ask for the correct port directory, or for all three inputs if the owner intends a new
    port. Do not create the directory and do not start Phase 1.
-3. Check that these four required state files are readable regular files in that directory:
-   `PORT-PLAN.md`, `PORTING.md`, `TASKS.md`, and `FINDINGS.md`.
+3. Check that these five required state files are readable regular files in that directory:
+   `PORT-PLAN.md`, `PORTING.md`, `TASKS.md`, `LEDGER.md`, and `FINDINGS.md`.
 4. If any are missing or not regular readable files, **stop** and list each invalid path.
    Do not regenerate or overwrite state and do not fall back to Phase 1.
 5. If all four pass, read them from that directory, recover the source directory and target
@@ -69,12 +69,13 @@ not "start a fresh port here". Phase 1 is entered only from the explicit
 For the explicit three-input form, route by whether the complete port state exists yet.
 
 ```
-Do all four required state files exist in the target directory?
+Do all five required state files exist in the target directory?
 ├── no  → Phase 1: references/phase-1-setup.md
-│         Analyze, interview, write PORT-PLAN.md + PORTING.md + TASKS.md + FINDINGS.md.
-│         Translate nothing.
+│         Analyze, interview, write PORT-PLAN.md + PORTING.md + TASKS.md + LEDGER.md
+│         + FINDINGS.md. Translate nothing.
 └── yes → Phase 2: references/phase-2-port-loop.md
-          One task: orient → translate → adversarial review → fix → test → update TASKS.md.
+          One task: orient → translate → adversarial review → fix → test →
+          update TASKS.md + LEDGER.md.
 ```
 
 If explicitly given `<source> <target> <language>` and any required state file is missing,
@@ -82,7 +83,7 @@ you are in Phase 1 — even if the request was "just port this one file". This f
 not apply to the one-directory resume form, which must stop on incomplete state. Nothing
 gets translated without the complete port state.
 
-## The four documents
+## The five documents
 
 Every port maintains exactly these, in the target directory. They are the port's memory:
 a decision that lives only in a conversation is gone at the end of the session.
@@ -91,27 +92,30 @@ a decision that lives only in a conversation is gone at the end of the session.
 |---|---|
 | `PORT-PLAN.md` | Scope, stack, inventory, waves, gates, risks. Written once, amended by sign-off. |
 | `PORTING.md` | Numbered rules `R1`…`Rn`. Reviews cite them instead of trading opinions. |
-| `TASKS.md` | The current work queue plus an append-only status history. **Updated whenever a task is added or changes status, and before reporting back.** |
+| `TASKS.md` | The work queue: one row per task, carrying its **current** status. **Updated whenever a task is added or changes status, and before reporting back.** |
+| `LEDGER.md` | The append-only history: every status transition and every `port`/`review`/`fix`/`test` entry. **Written in the same session as the work it records.** |
 | `FINDINGS.md` | Open questions · source defects · divergences · test deltas. Written at the moment of doubt. |
 
 Templates in `templates/`. Copy and fill; do not improvise the structure.
 
-### TASKS.md history
+### TASKS.md and LEDGER.md
 
-Treat the queue and history as different views of the same work:
+Treat the queue and the history as two views of the same work, in two files:
 
-- The queue row stores the task's **current** status. Change it in place from `TODO` to
-  `DOING`, then to `DONE` or `BLOCKED`.
-- The ledger is **append-only** and stores every status transition. When a task is created,
+- The `TASKS.md` queue row stores the task's **current** status. Change it in place from
+  `TODO` to `DOING`, then to `DONE` or `BLOCKED`. It never accumulates history.
+- `LEDGER.md` is **append-only** and stores every status transition. When a task is created,
   append `[T12] TODO <scope>`. When it is claimed, append `[T12] DOING <scope>`. Finish
-  with the existing `port`, `review`, `fix`, and `test` entries followed by `[T12] DONE ...`,
+  with the `port`, `review`, `fix`, and `test` entries followed by `[T12] DONE ...`,
   or append `[T12] BLOCKED <reason>`.
-- Never delete completed queue rows, remove ledger entries, reuse a task ID, or collapse
-  old `TODO`, `DOING`, `BLOCKED`, and `DONE` events into the current row.
+- Never delete completed queue rows, remove or edit ledger entries, reuse a task ID, or
+  keep a task's history in `TASKS.md` instead of `LEDGER.md`.
 - When a blocked task is reopened, append a new `TODO` event and then a new `DOING` event;
   preserve the earlier `BLOCKED` event.
-- For an existing `TASKS.md` that lacks old transition events, do not fabricate them.
-  Preserve what exists and record every transition from the current session onward.
+- For an existing port whose `LEDGER.md` lacks old transition events — including one whose
+  history was previously kept inside `TASKS.md` — do not fabricate them. Move whatever
+  entries exist into `LEDGER.md` verbatim, note the gap in its History gaps table, and
+  record every transition from the current session onward.
 
 ## Hard rules
 
@@ -125,8 +129,8 @@ These hold in both phases and override your judgment about good code.
    an open question. Never invent a plausible implementation.
 4. **The reviewer is a separate agent with a fresh context.** You never review your own
    port. Never leak your reasoning into the reviewer's prompt.
-5. **Preserve task history.** Never delete a task or its ledger events. Record every new
-   task and every status transition in `TASKS.md` when it happens.
+5. **Preserve task history.** Never delete a task row or a `LEDGER.md` entry. Record every
+   new task and every status transition in `LEDGER.md` when it happens.
 6. **Every deviation is reported.** Enumerate them at the end of every task, each with the
    rule that authorizes it. A deviation with no rule is a defect.
 7. **The test suite is the specification.** A test that must change is a finding, never a
@@ -178,10 +182,12 @@ was demanded. Every phrase below is verbatim from that transcript.
   exact match with the source
 - Collapsing two similar branches
 - Writing a comment that explains why a difference is acceptable
-- Reporting a task done without updating `TASKS.md`
+- Reporting a task done without updating `TASKS.md` and `LEDGER.md`
 - Adding, claiming, blocking, reopening, or completing a task without appending its status
-  event to the `TASKS.md` ledger
-- Deleting a completed task row or rewriting ledger history to show only the latest state
+  event to `LEDGER.md`
+- Writing a task's history into `TASKS.md` instead of `LEDGER.md`
+- Deleting a completed task row, or editing or rewriting `LEDGER.md` entries to show only
+  the latest state
 - Reviewing your own port, or telling the reviewer what you were unsure about
 
 **All of these mean: revert the edit, then stub it, port it faithfully, or file it.**
@@ -190,7 +196,7 @@ was demanded. Every phrase below is verbatim from that transcript.
 
 | File | Read when |
 |---|---|
-| `references/phase-1-setup.md` | Starting a port. Analysis, the interview question set, the four documents. |
+| `references/phase-1-setup.md` | Starting a port. Analysis, the interview question set, the five documents. |
 | `references/phase-2-port-loop.md` | Executing one task. |
 | `references/divergence-catalog.md` | Phase 1 pre-audit, and whenever a review turns up a semantic surprise. |
 | `references/reviewer-prompt.md` | Step 3 of every task. Send verbatim. |

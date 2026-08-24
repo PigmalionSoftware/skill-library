@@ -16,7 +16,7 @@ whose dependencies are all `DONE`, unless the operator named a specific task.
 If its dependencies are not ported yet, say which ones are missing and ask — do not port
 against a target that does not exist.
 
-Set the row to `DOING`. One task at a time.
+Set the row to `DOING` and append `[T12] DOING <scope>` to `LEDGER.md`. One task at a time.
 
 ---
 
@@ -117,11 +117,11 @@ If you cannot run a rung, say which and why. Do not report a rung you did not ru
 
 ---
 
-## 6 — Update TASKS.md
+## 6 — Update LEDGER.md and TASKS.md
 
 **Before reporting back, not after.** In the same session that did the work.
 
-Four ledger entries in §2, kept separate:
+Four entries appended to `LEDGER.md`, kept separate:
 
 ```
 [T12] port      <target> ← <source> (<LOC>, <scope note>)
@@ -131,10 +131,13 @@ Four ledger entries in §2, kept separate:
 [T12] DONE      <new stubs> · FINDINGS: <new rows>
 ```
 
-Then set the §1 row to `DONE` — only if the tests are green and every finding is applied
-or rejected in writing. Otherwise `BLOCKED`, with the blocker named in Notes.
+Then set the `TASKS.md` §1 row to `DONE` — only if the tests are green and every finding
+is applied or rejected in writing. Otherwise `BLOCKED`, with the blocker named in Notes and
+a `[T12] BLOCKED <reason>` entry appended instead of the `DONE` one.
 
-Update §3 metrics if the wave ended.
+Never edit an existing `LEDGER.md` entry, and never leave a task's history in `TASKS.md`.
+
+Update `TASKS.md` §2 metrics if the wave ended.
 
 ---
 

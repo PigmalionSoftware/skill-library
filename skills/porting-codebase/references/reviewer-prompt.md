@@ -80,6 +80,6 @@ End with one line: FAITHFUL, or N FINDINGS.
 A reviewer that shares the implementer's context inherits the implementer's blind spots
 and returns agreement. The split is the mechanism, not a formality.
 
-Track findings-per-review in `TASKS.md` §3. If the yield collapses toward zero across
+Track findings-per-review in `TASKS.md` §2. If the yield collapses toward zero across
 several tasks, the reviewer has lost context separation — check what is being leaked into
 the prompt before concluding the ports got better.

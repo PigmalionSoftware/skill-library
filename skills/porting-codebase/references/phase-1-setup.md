@@ -1,13 +1,13 @@
 # Phase 1 — Setup
 
-Run once per port. Produces four files. **Translate nothing in this phase** — not one
+Run once per port. Produces five files. **Translate nothing in this phase** — not one
 file, not "just the trivial ones to get moving". The deliverable is the rulebook that
 every later session depends on; a rule you discover after translating 40 files costs 40
 re-reviews.
 
-**Gate:** `PORT-PLAN.md`, `PORTING.md`, `TASKS.md`, and `FINDINGS.md` all exist in the
-target directory, the owner has read `PORT-PLAN.md` §3 and `PORTING.md`, and `TASKS.md`
-has a populated Wave 0.
+**Gate:** `PORT-PLAN.md`, `PORTING.md`, `TASKS.md`, `LEDGER.md`, and `FINDINGS.md` all
+exist in the target directory, the owner has read `PORT-PLAN.md` §3 and `PORTING.md`, and
+`TASKS.md` has a populated Wave 0.
 
 ---
 
@@ -165,7 +165,7 @@ a port loses its rules.
 
 ---
 
-## Step 4 — Write the four documents
+## Step 4 — Write the five documents
 
 From `templates/`. Copy them into the target directory and fill them in.
 
@@ -174,6 +174,7 @@ From `templates/`. Copy them into the target directory and fill them in.
 | `PORT-PLAN.md` | §0–§9 complete, §0 counted from the tree rather than estimated. No `{{PLACEHOLDER}}` left except in §10. |
 | `PORTING.md` | R1–R10 verbatim from the template. Every other section either filled or explicitly deleted as not-applicable. §6 populated from the pre-audit. |
 | `TASKS.md` | Wave 0 and Wave 1 populated with real rows. Later waves may be outlines. |
+| `LEDGER.md` | The header and rules kept, the example block replaced by a `TODO` entry for every row created in `TASKS.md`. |
 | `FINDINGS.md` | All four section headers, plus every question Step 3 could not resolve. |
 
 Two rules about the rulebook itself:
@@ -200,14 +201,14 @@ to add, rewrite, and contradict rules. Every ambiguity encountered gets folded b
 a numbered rule before Wave 1 starts.
 
 Then freeze `PORTING.md`. After the freeze, changing a rule requires the owner's sign-off
-and an `amend` entry in the ledger, because everything translated before the change
+and an `amend` entry in `LEDGER.md`, because everything translated before the change
 followed the old text.
 
 ---
 
 ## Step 6 — Report
 
-State: the four files and where they are · size/shape of the source, quoting the §0
+State: the five files and where they are · size/shape of the source, quoting the §0
 totals (files, LOC, LOC excluding tests) and the three largest files · the stack chosen ·
 how many divergence rows the pre-audit produced and which categories came back `n-a` ·
 the open questions still blocking · what Wave 0 contains and what it changed in

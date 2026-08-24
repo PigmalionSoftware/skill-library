@@ -7,8 +7,9 @@
 - **Status:** Draft / Approved
 
 Companion documents: [`PORTING.md`](./PORTING.md) (the rules) ·
-[`TASKS.md`](./TASKS.md) (the queue and ledger) · [`FINDINGS.md`](./FINDINGS.md)
-(questions, source defects, divergences, test deltas).
+[`TASKS.md`](./TASKS.md) (the queue) · [`LEDGER.md`](./LEDGER.md) (the append-only
+history) · [`FINDINGS.md`](./FINDINGS.md) (questions, source defects, divergences,
+test deltas).
 
 ---
 
