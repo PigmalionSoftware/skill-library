@@ -53,6 +53,28 @@ func (r *Repo) BranchExists(branch string) bool {
 	return r.run("show-ref", "--verify", "--quiet", "refs/heads/"+branch) == nil
 }
 
+// DeleteBranch deletes the branch whether or not its commits are merged
+// anywhere else, which is what -D means. Git's -d would refuse a sandbox
+// branch in the ordinary case, since such a branch is meant to be pushed and
+// reviewed rather than merged locally.
+func (r *Repo) DeleteBranch(branch string) error {
+	if err := r.run("branch", "-D", "--", branch); err != nil {
+		return fmt.Errorf("git branch -D: %w", err)
+	}
+	return nil
+}
+
+// IsClean reports whether the working directory has no changes at all, staged
+// or not, tracked or not. Unlike HasStagedChanges it speaks for the whole
+// worktree, which is what decides whether removing it would discard work.
+func (r *Repo) IsClean() (bool, error) {
+	out, err := r.output("status", "--porcelain")
+	if err != nil {
+		return false, fmt.Errorf("git status: %w", err)
+	}
+	return out == "", nil
+}
+
 // AddWorktree checks the branch out at dir, creating the branch when create is set.
 func (r *Repo) AddWorktree(dir, branch string, create bool) error {
 	args := []string{"worktree", "add"}

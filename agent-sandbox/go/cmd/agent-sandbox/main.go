@@ -5,6 +5,7 @@
 //
 //	agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <model>] [--push] <prompt...>
 //	agent-sandbox worktree-list
+//	agent-sandbox worktree-delete -b <branch> [--force]
 //
 // The branch name always comes first, before any option. Authentication comes
 // from the agent's configuration directory on the host, which is mounted into
@@ -28,12 +29,22 @@ func main() {
 	args := os.Args[1:]
 
 	// The first argument is a verb when it names one; otherwise it is the
-	// branch name of a run, the form this command started out with.
-	if len(args) > 0 && args[0] == "worktree-list" {
-		if err := sandbox.WorktreeList(args[1:], os.Stdout); err != nil {
-			fail(program, err)
+	// branch name of a run, the form this command started out with. The verbs
+	// only ever talk to git, so they return before the signal handling and the
+	// Docker client a run needs.
+	if len(args) > 0 {
+		switch args[0] {
+		case "worktree-list":
+			if err := sandbox.WorktreeList(args[1:], os.Stdout); err != nil {
+				fail(program, err)
+			}
+			return
+		case "worktree-delete":
+			if err := sandbox.WorktreeDelete(args[1:], os.Stdout); err != nil {
+				fail(program, err)
+			}
+			return
 		}
-		return
 	}
 
 	opts, err := sandbox.ParseArgs(args)

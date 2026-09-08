@@ -20,8 +20,9 @@ type Options struct {
 func Usage(program string) string {
 	return fmt.Sprintf(
 		"Usage: %s <branch-name> --agent <%s> [--model <model>] [--push] <prompt...>\n"+
-			"       %s worktree-list",
-		program, strings.Join(agent.Names(), "|"), program,
+			"       %s worktree-list\n"+
+			"       %s worktree-delete -b <branch-name> [--force]",
+		program, strings.Join(agent.Names(), "|"), program, program,
 	)
 }
 
