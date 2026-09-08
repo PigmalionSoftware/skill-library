@@ -23,4 +23,41 @@ Las skills se activan de dos maneras:
 - **Automática**: el agente detecta cuándo una skill aplica según su descripción y la petición del usuario.
 - **Manual**: invocando el comando correspondiente, por ejemplo `/commit-push` o `/deep-research`.
 
+## agent-sandbox
+
+Además de las skills, este repositorio incluye **agent-sandbox** (`agent-sandbox/go/`): una
+herramienta de línea de comandos que ejecuta un agente de código (**Codex**, **Claude Code**,
+**opencode** o **pi**) dentro de un contenedor Docker, sobre un *worktree* de Git aislado. El
+agente trabaja en un branch propio, en un directorio separado, sin tocar tu copia de trabajo
+actual.
+
+### Instalación
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PigmalionSoftware/skill-library/master/agent-sandbox/go/install.sh | bash
+```
+
+El script descarga el binario de la última release, lo instala en `~/.local/bin/agent-sandbox`
+y te avisa si ese directorio no está en tu `PATH`. Solo Linux x86_64 por ahora.
+
+### Modo de uso
+
+```
+agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--push] <prompt...>
+```
+
+**El nombre del branch va siempre primero**, antes de cualquier opción.
+
+| Parámetro | Obligatorio | Descripción |
+| --- | --- | --- |
+| `<branch>` | Sí | Nombre del branch. El worktree se crea en `../<branch>`. |
+| `--agent <codex\|claude\|opencode\|pi>` | Sí | Agente a ejecutar. |
+| `--model <modelo>` | No | Modelo a usar. Por defecto: `gpt-5.6-terra` (codex) y `opus` (claude); opencode y pi resuelven el suyo. |
+| `--push` | No | Al terminar: `git add -A`, commit con el prompt como mensaje y `git push --set-upstream`. |
+| `<prompt...>` | Sí | Instrucción para el agente, entre comillas. |
+
+Requiere Docker, ejecutarse dentro de un repositorio Git, y tener la configuración del agente
+ya autenticada en el host (`~/.codex`, `~/.claude`, `~/.config/opencode` o `~/.pi/agent`
+según corresponda): las credenciales salen de ahí, nunca de variables de entorno.
+
 
