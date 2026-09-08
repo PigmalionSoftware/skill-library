@@ -16,11 +16,12 @@ type Options struct {
 	Prompt string
 }
 
-// Usage is the one-line synopsis printed on a usage error.
+// Usage is the synopsis printed on a usage error, one line per form.
 func Usage(program string) string {
 	return fmt.Sprintf(
-		"Usage: %s <branch-name> --agent <%s> [--model <model>] [--push] <prompt...>",
-		program, strings.Join(agent.Names(), "|"),
+		"Usage: %s <branch-name> --agent <%s> [--model <model>] [--push] <prompt...>\n"+
+			"       %s worktree-list",
+		program, strings.Join(agent.Names(), "|"), program,
 	)
 }
 

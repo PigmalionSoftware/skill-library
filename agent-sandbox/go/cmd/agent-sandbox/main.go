@@ -4,6 +4,7 @@
 // Usage:
 //
 //	agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <model>] [--push] <prompt...>
+//	agent-sandbox worktree-list
 //
 // The branch name always comes first, before any option. Authentication comes
 // from the agent's configuration directory on the host, which is mounted into
@@ -24,18 +25,20 @@ import (
 
 func main() {
 	program := filepath.Base(os.Args[0])
+	args := os.Args[1:]
 
-	opts, err := sandbox.ParseArgs(os.Args[1:])
-	if err != nil {
-		var usageErr sandbox.UsageError
-		if errors.As(err, &usageErr) {
-			if message := usageErr.Error(); message != "" {
-				fmt.Fprintf(os.Stderr, "error: %s\n", message)
-			}
-			fmt.Fprintln(os.Stderr, sandbox.Usage(program))
-			os.Exit(sandbox.ExitUsage)
+	// The first argument is a verb when it names one; otherwise it is the
+	// branch name of a run, the form this command started out with.
+	if len(args) > 0 && args[0] == "worktree-list" {
+		if err := sandbox.WorktreeList(args[1:], os.Stdout); err != nil {
+			fail(program, err)
 		}
-		fail(err)
+		return
+	}
+
+	opts, err := sandbox.ParseArgs(args)
+	if err != nil {
+		fail(program, err)
 	}
 
 	// An interrupt cancels the context, which stops the container and waits for
@@ -46,7 +49,7 @@ func main() {
 
 	status, err := sandbox.Run(ctx, opts, os.Stdout)
 	if err != nil {
-		fail(err)
+		fail(program, err)
 	}
 
 	// The agent's own status is the command's status.
@@ -55,7 +58,17 @@ func main() {
 
 // fail reports err and exits with the status it asks for, defaulting to a
 // plain failure.
-func fail(err error) {
+func fail(program string, err error) {
+	// A malformed command line is the one error the synopsis can answer.
+	var usageErr sandbox.UsageError
+	if errors.As(err, &usageErr) {
+		if message := usageErr.Error(); message != "" {
+			fmt.Fprintf(os.Stderr, "error: %s\n", message)
+		}
+		fmt.Fprintln(os.Stderr, sandbox.Usage(program))
+		os.Exit(sandbox.ExitUsage)
+	}
+
 	// An interrupt is not a failure to explain: it is what the user asked for,
 	// and it exits the way a signalled process does.
 	if errors.Is(err, context.Canceled) {
