@@ -6,6 +6,7 @@
 //	agent-sandbox <branch-name> --agent <codex|claude|opencode|pi> [--model <model>] [--push] <prompt>
 //	agent-sandbox worktree-list
 //	agent-sandbox worktree-delete -b <branch-name> [--force]
+//	agent-sandbox worktree-delete-all [--yes]
 //
 
 package main

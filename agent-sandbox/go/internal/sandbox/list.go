@@ -8,78 +8,72 @@ import (
 	"agent-sandbox/internal/git"
 )
 
-// WorktreeList prints the worktrees attached to the repository the command was
-// run in, one per line: the branch and the path. It reads git and nothing else,
-// so it needs neither Docker nor the network.
+// WorktreeList prints the worktrees the sandbox created in the repository the
+// command was run in, one per line: the branch and the path. It reads the state
+// file and git, so it needs neither Docker nor the network.
 func WorktreeList(out io.Writer) error {
-	added, err := addedWorktrees()
+	found, err := sandboxWorktrees()
 	if err != nil {
 		return err
 	}
 
-	width := 0
-	for _, worktree := range added {
-		if length := len(branchColumn(worktree)); length > width {
-			width = length
-		}
-	}
-	for _, worktree := range added {
-		fmt.Fprintf(out, "%-*s  %s\n", width, branchColumn(worktree), worktree.Path)
-	}
+	printWorktrees(out, found.worktrees)
 	return nil
 }
 
 // WorktreeBranches names the branches the sandbox worktrees hold, for the shell
-// completion of the flags that take one. A worktree on a detached HEAD has no
-// branch to offer and is left out.
+// completion of the flags that take one.
 func WorktreeBranches() ([]string, error) {
-	added, err := addedWorktrees()
+	found, err := sandboxWorktrees()
 	if err != nil {
 		return nil, err
 	}
 
 	var branches []string
-	for _, worktree := range added {
-		if worktree.Branch != "" {
-			branches = append(branches, worktree.Branch)
-		}
+	for _, worktree := range found.worktrees {
+		branches = append(branches, worktree.Branch)
 	}
 	return branches, nil
 }
 
-// addedWorktrees are the worktrees the sandbox added beside the caller's
-// working copy. The main worktree is that working copy itself, so it is never
-// one of them.
-func addedWorktrees() ([]git.Worktree, error) {
+// repoWorktrees is a repository and the worktrees the sandbox created in it,
+// kept together because deleting one needs the repository it belongs to.
+type repoWorktrees struct {
+	repo      *git.Repo
+	worktrees []worktreeRecord
+}
+
+// sandboxWorktrees are the worktrees of the repository the command was run in.
+// Only the ones the sandbox created are there to find: a worktree the user made
+// by hand was never written down, so no verb here can reach it.
+func sandboxWorktrees() (repoWorktrees, error) {
 	executionDir, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return repoWorktrees{}, err
 	}
 
 	repo, err := git.Open(executionDir)
 	if err != nil {
-		return nil, err
+		return repoWorktrees{}, err
 	}
 
-	worktrees, err := repo.Worktrees()
+	records, err := recordedWorktrees(repo.Dir)
 	if err != nil {
-		return nil, err
+		return repoWorktrees{}, err
 	}
-
-	var added []git.Worktree
-	for _, worktree := range worktrees {
-		if !worktree.Main {
-			added = append(added, worktree)
-		}
-	}
-	return added, nil
+	return repoWorktrees{repo: repo, worktrees: records}, nil
 }
 
-// branchColumn names the branch checked out in the worktree. A detached HEAD
-// has no branch, and the column still needs something in it.
-func branchColumn(worktree git.Worktree) string {
-	if worktree.Branch == "" {
-		return "-"
+// printWorktrees writes the branch and path of each worktree in aligned
+// columns. worktree-delete-all shows the same table before it asks.
+func printWorktrees(out io.Writer, worktrees []worktreeRecord) {
+	width := 0
+	for _, worktree := range worktrees {
+		if length := len(worktree.Branch); length > width {
+			width = length
+		}
 	}
-	return worktree.Branch
+	for _, worktree := range worktrees {
+		fmt.Fprintf(out, "%-*s  %s\n", width, worktree.Branch, worktree.Path)
+	}
 }

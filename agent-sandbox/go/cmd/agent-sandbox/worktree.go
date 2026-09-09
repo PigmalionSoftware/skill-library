@@ -50,3 +50,22 @@ func newWorktreeDeleteCmd() *cobra.Command {
 
 	return cmd
 }
+
+// newWorktreeDeleteAllCmd is the verb that cleans all of them up at once. It
+// always deletes, uncommitted changes and all, so it asks first.
+func newWorktreeDeleteAllCmd() *cobra.Command {
+	var assumeYes bool
+
+	cmd := &cobra.Command{
+		Use:   "worktree-delete-all",
+		Short: "Remove every sandbox worktree and delete their branches, uncommitted changes and all",
+		Args:  usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return sandbox.WorktreeDeleteAll(assumeYes, cmd.InOrStdin(), cmd.OutOrStdout())
+		},
+	}
+
+	cmd.Flags().BoolVarP(&assumeYes, "yes", "y", false, "skip the confirmation prompt")
+
+	return cmd
+}

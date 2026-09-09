@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,28 +12,19 @@ import (
 )
 
 func WorktreeDelete(branch string, force bool, out io.Writer) error {
+	found, err := sandboxWorktrees()
+	if err != nil {
+		return err
+	}
+
+	worktree, ok := findWorktree(found.worktrees, branch)
+	if !ok {
+		return fmt.Errorf("no sandbox worktree on branch %s; run worktree-list to see the ones there are", branch)
+	}
+
 	executionDir, err := os.Getwd()
 	if err != nil {
 		return err
-	}
-
-	repo, err := git.Open(executionDir)
-	if err != nil {
-		return err
-	}
-
-	worktrees, err := repo.Worktrees()
-	if err != nil {
-		return err
-	}
-
-	worktree, found := findWorktree(worktrees, branch)
-	if !found {
-		return fmt.Errorf("no worktree is checked out on branch %s; run worktree-list to see the ones there are", branch)
-	}
-
-	if worktree.Main {
-		return fmt.Errorf("%s is checked out in the main working copy, not in a sandbox worktree", branch)
 	}
 
 	inside, err := isInside(executionDir, worktree.Path)
@@ -43,14 +35,93 @@ func WorktreeDelete(branch string, force bool, out io.Writer) error {
 		return fmt.Errorf("cannot delete %s from inside it; run this from the repository instead", worktree.Path)
 	}
 
+	if err := deleteWorktree(found.repo, worktree, force, out); err != nil {
+		return err
+	}
+	return forgetWorktrees(found.repo.Dir, []string{worktree.Path})
+}
+
+// WorktreeDeleteAll removes every sandbox worktree and the branches they hold.
+// The removal is always forced, so the confirmation is the only thing standing
+// between the question and the uncommitted work it discards.
+func WorktreeDeleteAll(assumeYes bool, in io.Reader, out io.Writer) error {
+	found, err := sandboxWorktrees()
+	if err != nil {
+		return err
+	}
+	if len(found.worktrees) == 0 {
+		fmt.Fprintln(out, "No sandbox worktrees to delete.")
+		return nil
+	}
+
+	executionDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// The whole command is refused when it would delete the directory it is
+	// running in, rather than prompting and then deleting all but one. --yes
+	// waives the question, not this.
+	for _, worktree := range found.worktrees {
+		inside, err := isInside(executionDir, worktree.Path)
+		if err != nil {
+			return err
+		}
+		if inside {
+			return fmt.Errorf("cannot delete %s from inside it; run this from the repository instead", worktree.Path)
+		}
+	}
+
+	printWorktrees(out, found.worktrees)
+
+	if !assumeYes {
+		noun := "worktrees and their branches"
+		if len(found.worktrees) == 1 {
+			noun = "worktree and its branch"
+		}
+
+		question := fmt.Sprintf("Delete %d %s? [y/N]: ", len(found.worktrees), noun)
+		confirmed, err := confirm(in, out, question)
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Fprintln(out, "Aborted; nothing was deleted.")
+			return nil
+		}
+	}
+
+	// One worktree that will not go is no reason to leave the rest, so the
+	// failures are collected and reported together at the end. Only the ones
+	// that went are forgotten; a failure keeps its record.
+	var (
+		deleted  []string
+		failures []error
+	)
+	for _, worktree := range found.worktrees {
+		if err := deleteWorktree(found.repo, worktree, true, out); err != nil {
+			failures = append(failures, err)
+			continue
+		}
+		deleted = append(deleted, worktree.Path)
+	}
+
+	if err := forgetWorktrees(found.repo.Dir, deleted); err != nil {
+		failures = append(failures, err)
+	}
+	return errors.Join(failures...)
+}
+
+// deleteWorktree removes one worktree and deletes the branch it held.
+func deleteWorktree(repo *git.Repo, worktree worktreeRecord, force bool, out io.Writer) error {
 	if err := removeWorktree(repo, worktree.Path, force, out); err != nil {
 		return err
 	}
 
-	if err := repo.DeleteBranch(branch); err != nil {
+	if err := repo.DeleteBranch(worktree.Branch); err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "Deleted branch %s\n", branch)
+	fmt.Fprintf(out, "Deleted branch %s\n", worktree.Branch)
 	return nil
 }
 
@@ -95,18 +166,28 @@ func removeWorktree(repo *git.Repo, path string, force bool, out io.Writer) erro
 
 // findWorktree picks the worktree holding the branch. A branch is checked out
 // in at most one worktree, so the first match is the only one.
-func findWorktree(worktrees []git.Worktree, branch string) (git.Worktree, bool) {
+func findWorktree(worktrees []worktreeRecord, branch string) (worktreeRecord, bool) {
 	for _, worktree := range worktrees {
 		if worktree.Branch == branch {
 			return worktree, true
 		}
 	}
-	return git.Worktree{}, false
+	return worktreeRecord{}, false
+}
+
+// resolvePath resolves the symlinks in a path so that two spellings of the same
+// directory compare equal. A path that is no longer there keeps what it says.
+func resolvePath(path string) string {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return filepath.Clean(path)
+	}
+	return resolved
 }
 
 // isInside reports whether dir is the directory at root or somewhere under it.
-// Both are resolved first, because the worktree paths git reports have their
-// symlinks resolved and the current directory may not.
+// Both are resolved first, because the recorded worktree paths may not have
+// their symlinks resolved and the current directory may not either.
 func isInside(dir, root string) (bool, error) {
 	dir, err := filepath.EvalSymlinks(dir)
 	if err != nil {

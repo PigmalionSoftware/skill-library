@@ -4,6 +4,7 @@ package sandbox
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	agentsandbox "agent-sandbox"
 	"agent-sandbox/internal/agent"
@@ -67,8 +69,23 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	if err := os.MkdirAll(filepath.Dir(worktreeDir), 0o755); err != nil {
 		return 0, err
 	}
-	if err := repo.AddWorktree(worktreeDir, opts.Branch, !repo.BranchExists(opts.Branch)); err != nil {
+	newBranch := !repo.BranchExists(opts.Branch)
+	if err := repo.AddWorktree(worktreeDir, opts.Branch, newBranch); err != nil {
 		return 0, err
+	}
+
+	// The worktree is written down before the agent runs, because a worktree
+	// missing from the state file is one no worktree verb can see afterwards.
+	record := worktreeRecord{
+		Repo:    repo.Dir,
+		Path:    worktreeDir,
+		Branch:  opts.Branch,
+		Created: time.Now().UTC(),
+	}
+	if err := recordWorktree(record); err != nil {
+		// Nothing has run in the worktree yet, so undoing it costs nothing and
+		// beats leaving behind one that no worktree verb can reach.
+		return 0, errors.Join(err, undoWorktree(repo, worktreeDir, opts.Branch, newBranch))
 	}
 
 	runOpts, err := containerOptions(opts, worktreeDir)
@@ -85,6 +102,19 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 		return 0, err
 	}
 	return status, nil
+}
+
+// undoWorktree removes a worktree the run has just created, for the failure
+// that happens between creating it and being able to use it. The branch goes
+// only if this run is what created it.
+func undoWorktree(repo *git.Repo, dir, branch string, newBranch bool) error {
+	if err := repo.RemoveWorktree(dir, true); err != nil {
+		return err
+	}
+	if !newBranch {
+		return nil
+	}
+	return repo.DeleteBranch(branch)
 }
 
 // containerOptions completes the agent's container configuration with the

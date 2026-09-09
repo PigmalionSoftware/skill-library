@@ -35,7 +35,8 @@ Dependency direction is strictly one way — `cmd` → `sandbox` → {`git`, `do
 and the three leaf packages know nothing about each other:
 
 - **`cmd/agent-sandbox`** — argument dispatch and exit status only, built on `cobra`. The
-  root command *is* the run, and the verbs (`worktree-list`, `worktree-delete`) are its
+  root command *is* the run, and the verbs (`worktree-list`, `worktree-delete`,
+  `worktree-delete-all`) are its
   subcommands, so a first argument that names a verb is a verb and anything else is the
   branch name of a run. `fail()` is the single exit path and decides the status from the
   error's type.
@@ -58,6 +59,11 @@ build its own image from anywhere with no build context beyond that one file.
   the host — a missing config directory is a hard error (`hostConfigError`), never created.
 - **The worktree is a sibling of the current working directory**, not of the repo root:
   `filepath.Join(filepath.Dir(cwd), branch)`. Existing paths are refused rather than reused.
+- **`~/.config/agent-sandbox/worktrees.jsonl` is the source of truth for what the sandbox
+  created**, one JSON line per worktree, appended by a run and rewritten by the delete verbs
+  (`internal/sandbox/worktreestate.go`). Every worktree verb reads it and nothing else — the
+  `git worktree list` parsing is gone — so a worktree the user made by hand is invisible to
+  them, and none of them can delete it.
 - **Exit status is a protocol.** `UsageError` → print the synopsis, exit 2. `StatusError` →
   print the message only, exit with its status. `context.Canceled` → exit 130. Otherwise the
   agent's own exit code becomes the command's exit code. Everything cobra can reject has to
