@@ -15,6 +15,8 @@ Cada skill vive en su propia carpeta dentro de `skills/` y se define en un archi
 | **plan-from-spec** | Convierte una especificación o definición de feature en un plan de implementación riguroso y revisado, guardado en `plans/`. Interroga la spec con preguntas hasta no dejar nada librado a suposiciones. |
 | **postman-collection-generator** | Genera una colección de Postman (v2.1) importable a partir de una base de código. Escanea las rutas, extrae métodos/paths/params/bodies/headers, agrupa endpoints en carpetas y configura variables de entorno. Agnóstico al lenguaje y framework. |
 | **supabase-postgres-best-practices** | Guía de optimización de rendimiento y buenas prácticas de Postgres mantenida por Supabase. Reglas en 8 categorías priorizadas por impacto, para escribir, revisar u optimizar consultas y esquemas. |
+| **update-readme** | Revisa los cambios del repositorio y mantiene el README.md alineado con el comportamiento, instalación, uso y compatibilidad verificados. |
+| **push-github-tag** | Determina el último tag semántico estable, incrementa su versión patch, crea y publica el nuevo tag anotado en GitHub. |
 
 ## Uso
 
@@ -59,5 +61,4 @@ agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--
 Requiere Docker, ejecutarse dentro de un repositorio Git, y tener la configuración del agente
 ya autenticada en el host (`~/.codex`, `~/.claude`, `~/.config/opencode` o `~/.pi/agent`
 según corresponda): las credenciales salen de ahí, nunca de variables de entorno.
-
 
