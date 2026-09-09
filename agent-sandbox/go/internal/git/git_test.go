@@ -1,6 +1,7 @@
 package git
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -206,6 +207,8 @@ func openTestRepo(t *testing.T) *Repo {
 	if err != nil {
 		t.Fatal(err)
 	}
+	repo.Stdout = io.Discard
+	repo.Stderr = io.Discard
 	return repo
 }
 
@@ -214,14 +217,13 @@ func setupTestRepo(t *testing.T) string {
 
 	repoDir := t.TempDir()
 	runTestGit(t, repoDir, "init", "--quiet", "--initial-branch=main")
+	runTestGit(t, repoDir, "config", "user.name", "Test User")
+	runTestGit(t, repoDir, "config", "user.email", "test@example.com")
 	if err := os.WriteFile(filepath.Join(repoDir, "README.md"), []byte("initial\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	runTestGit(t, repoDir, "add", "README.md")
-	runTestGit(t, repoDir,
-		"-c", "user.name=Test User",
-		"-c", "user.email=test@example.com",
-		"commit", "--quiet", "-m", "initial")
+	runTestGit(t, repoDir, "commit", "--quiet", "-m", "initial")
 	return repoDir
 }
 
