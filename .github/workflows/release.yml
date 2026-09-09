@@ -27,9 +27,12 @@ jobs:
           cache-dependency-path: agent-sandbox/go/go.sum
 
       - name: Build Linux archive
+        env:
+          # The tag is agent-sandbox-v<version>; --version reports the version.
+          VERSION: ${{ github.ref_name }}
         run: |
           mkdir -p dist/package
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/package/agent-sandbox ./cmd/agent-sandbox
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X main.version=${VERSION#agent-sandbox-v}" -o dist/package/agent-sandbox ./cmd/agent-sandbox
           tar -C dist/package -czf dist/agent-sandbox_linux_amd64.tar.gz agent-sandbox
           sha256sum dist/agent-sandbox_linux_amd64.tar.gz > dist/agent-sandbox_linux_amd64.tar.gz.sha256
 

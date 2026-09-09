@@ -31,8 +31,10 @@ func usageErrorf(format string, args ...any) error {
 	return UsageError{fmt.Errorf(format, args...)}
 }
 
-// StatusError is an error that ends the command with a specific status, without
-// printing the usage message: the error text is the whole explanation.
+func NewUsageError(err error) error {
+	return UsageError{err}
+}
+
 type StatusError struct {
 	Status int
 	err    error

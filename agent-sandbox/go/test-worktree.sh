@@ -8,7 +8,7 @@ set -uo pipefail
 
 cd -- "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 
-sandbox=(go run cmd/agent-sandbox/main.go)
+sandbox=(go run ./cmd/agent-sandbox)
 
 run() {
   printf '\n$ agent-sandbox %s\n' "$*"

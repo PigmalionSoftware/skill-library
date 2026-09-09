@@ -34,9 +34,11 @@ Running the tool requires Docker and a real git repo, and it will build/rebuild 
 Dependency direction is strictly one way — `cmd` → `sandbox` → {`git`, `docker`, `agent`} —
 and the three leaf packages know nothing about each other:
 
-- **`cmd/agent-sandbox`** — argument dispatch and exit status only. The first argument is a
-  verb when it names one (`worktree-list`), otherwise it is the branch name of a run.
-  `fail()` is the single exit path and decides the status from the error's type.
+- **`cmd/agent-sandbox`** — argument dispatch and exit status only, built on `cobra`. The
+  root command *is* the run, and the verbs (`worktree-list`, `worktree-delete`) are its
+  subcommands, so a first argument that names a verb is a verb and anything else is the
+  branch name of a run. `fail()` is the single exit path and decides the status from the
+  error's type.
 - **`internal/sandbox`** — the orchestration: parse options, ensure the image is current,
   create the worktree, run the container, optionally commit and push.
 - **`internal/git`** — thin wrappers over the `git` CLI (`exec.Command`), not a git library.
@@ -58,7 +60,11 @@ build its own image from anywhere with no build context beyond that one file.
   `filepath.Join(filepath.Dir(cwd), branch)`. Existing paths are refused rather than reused.
 - **Exit status is a protocol.** `UsageError` → print the synopsis, exit 2. `StatusError` →
   print the message only, exit with its status. `context.Canceled` → exit 130. Otherwise the
-  agent's own exit code becomes the command's exit code.
+  agent's own exit code becomes the command's exit code. Everything cobra can reject has to
+  be funnelled into `UsageError` to keep that protocol: flag errors through
+  `SetFlagErrorFunc` on the root, positional-argument errors through the `usageArgs` wrapper.
+  A required flag is therefore checked in `RunE`, **not** with `MarkFlagRequired`, whose
+  error cobra raises outside both hooks and which would otherwise exit 1 with no synopsis.
 - **A cancelled run stops its container and waits for it** (`docker.stop`), on a context
   derived with `context.WithoutCancel`, because the agent holds the worktree open and must not
   outlive the process. `AutoRemove` handles cleanup only once a container has started; the code

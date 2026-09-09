@@ -10,20 +10,7 @@ import (
 	"agent-sandbox/internal/git"
 )
 
-// WorktreeDelete removes the worktree checked out on a branch and deletes the
-// branch with it, so the name is free for another run. Like WorktreeList it
-// reads and writes git and nothing else, so it needs neither Docker nor the
-// network.
-//
-// Deleting is not undoable, so every refusal happens before anything is
-// removed: the command either does the whole job or leaves the repository
-// exactly as it found it.
-func WorktreeDelete(args []string, out io.Writer) error {
-	branch, force, err := parseDeleteArgs(args)
-	if err != nil {
-		return err
-	}
-
+func WorktreeDelete(branch string, force bool, out io.Writer) error {
 	executionDir, err := os.Getwd()
 	if err != nil {
 		return err
@@ -44,15 +31,10 @@ func WorktreeDelete(args []string, out io.Writer) error {
 		return fmt.Errorf("no worktree is checked out on branch %s; run worktree-list to see the ones there are", branch)
 	}
 
-	// The main worktree is the caller's own working copy, and the branch in it
-	// is the one they are working on. Neither is the sandbox's to delete.
 	if worktree.Main {
 		return fmt.Errorf("%s is checked out in the main working copy, not in a sandbox worktree", branch)
 	}
 
-	// Removing the directory the command is running in would pull the ground
-	// out from under it, and git refuses it anyway; saying so plainly beats
-	// letting git's own message explain it.
 	inside, err := isInside(executionDir, worktree.Path)
 	if err != nil {
 		return err
@@ -109,32 +91,6 @@ func removeWorktree(repo *git.Repo, path string, force bool, out io.Writer) erro
 	}
 	fmt.Fprintf(out, "Removed worktree %s\n", path)
 	return nil
-}
-
-// parseDeleteArgs reads the arguments of worktree-delete: the branch, named by
-// -b because that is how the command is documented, and --force.
-func parseDeleteArgs(args []string) (branch string, force bool, err error) {
-	for len(args) > 0 {
-		switch args[0] {
-		case "-b", "--branch":
-			if len(args) < 2 {
-				return "", false, usageErrorf("%s needs a branch name", args[0])
-			}
-			if branch != "" {
-				return "", false, usageErrorf("worktree-delete takes one branch")
-			}
-			branch, args = args[1], args[2:]
-		case "--force":
-			force, args = true, args[1:]
-		default:
-			return "", false, usageErrorf("unknown argument: %s", args[0])
-		}
-	}
-
-	if branch == "" {
-		return "", false, usageErrorf("-b <branch-name> is required")
-	}
-	return branch, force, nil
 }
 
 // findWorktree picks the worktree holding the branch. A branch is checked out

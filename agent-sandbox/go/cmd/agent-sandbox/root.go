@@ -1,0 +1,122 @@
+package main
+
+import (
+	"strings"
+
+	"github.com/spf13/cobra"
+
+	"agent-sandbox/internal/sandbox"
+)
+
+func newRootCmd() (*cobra.Command, *int) {
+	var (
+		status    int
+		agentName string
+		model     string
+		push      bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "agent-sandbox <branch-name> <prompt>",
+		Short: "Run a coding agent in a container, on a git worktree of its own",
+		Long: "Run a coding agent inside the agent-sandbox container, on a git worktree of\n" +
+			"its own, so it never touches the current working copy. The worktree is created\n" +
+			"beside the current directory, at ../<branch-name>.\n\n" +
+			"Authentication comes from the agent's configuration directory on the host,\n" +
+			"which is mounted into the container; no credentials are passed as environment\n" +
+			"variables, so the agent must already be authenticated on the host.",
+		Example: "  agent-sandbox fix-login --agent codex \"fix the login redirect loop\"\n" +
+			"  agent-sandbox fix-login --agent claude --model sonnet --push \"add a test for it\"",
+
+		// Args has to be set even where cobra's default would do, because a nil
+		// Args makes cobra reject the first argument of a root command that has
+		// subcommands as an unknown command — and here that argument is the
+		// branch name.
+		Args: runArgs,
+
+		// fail is the only thing that prints an error or a synopsis, so that the
+		// exit status and the message it goes with are decided in one place.
+		SilenceUsage:  true,
+		SilenceErrors: true,
+
+		Version: buildVersion(),
+
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Everything after the branch name is the prompt, joined back into
+			// the sentence it was before the shell took it apart, so that a
+			// prompt of more than one word need not be quoted. A prompt holding
+			// a word that starts with a dash does, or the flag parser claims it.
+			opts, err := sandbox.NewOptions(args[0], agentName, model, strings.Join(args[1:], " "), push)
+			if err != nil {
+				return err
+			}
+
+			status, err = sandbox.Run(cmd.Context(), opts, cmd.OutOrStdout())
+			return err
+		},
+	}
+
+	cmd.Flags().StringVar(&agentName, "agent", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
+	cmd.Flags().StringVar(&model, "model", "", "model to use (default: the agent's own)")
+	cmd.Flags().BoolVar(&push, "push", false, "commit the agent's work and push the branch")
+
+	// pflag reports a malformed flag through the error func of the command it
+	// was parsing, or of the nearest parent that has one, so this covers the
+	// subcommands as well as the run.
+	cmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+		return sandbox.NewUsageError(err)
+	})
+
+	completeFlag(cmd, "agent", func(string) ([]string, error) {
+		return sandbox.AgentNames(), nil
+	})
+
+	cmd.AddCommand(newWorktreeListCmd(), newWorktreeDeleteCmd())
+	return cmd, &status
+}
+
+// runArgs validates the positional arguments of a run: the branch name, then
+// the prompt. Too few of them is not a mistake worth a sentence of its own —
+// the synopsis says everything there is to say about the shape of a run — so it
+// is reported unexplained, which is what a zero UsageError means.
+func runArgs(_ *cobra.Command, args []string) error {
+	if len(args) < 2 {
+		return sandbox.UsageError{}
+	}
+	return nil
+}
+
+// usageArgs reports a wrong number of arguments as a malformed command line.
+// Cobra hands the errors an argument validator produces straight back from
+// Execute, with no hook of their own to pass them through, so the wrapping that
+// SetFlagErrorFunc does for flags happens here for positional arguments.
+func usageArgs(validate cobra.PositionalArgs) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if err := validate(cmd, args); err != nil {
+			return sandbox.NewUsageError(err)
+		}
+		return nil
+	}
+}
+
+// completeFlag offers the values of a flag to the shell. The completions are
+// filtered to what the user has typed so far and never fall back to file names,
+// because none of these flags names a file. A registration only fails when the
+// same flag is registered twice, which is a mistake in this file rather than
+// anything a run can do, so there is nothing to report at run time.
+func completeFlag(cmd *cobra.Command, name string, values func(prefix string) ([]string, error)) {
+	_ = cmd.RegisterFlagCompletionFunc(name, func(_ *cobra.Command, _ []string, prefix string) ([]string, cobra.ShellCompDirective) {
+		candidates, err := values(prefix)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		var matching []string
+		for _, candidate := range candidates {
+			if strings.HasPrefix(candidate, prefix) {
+				matching = append(matching, candidate)
+			}
+		}
+		return matching, cobra.ShellCompDirectiveNoFileComp
+	})
+}

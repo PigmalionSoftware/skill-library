@@ -1,9 +1,6 @@
 package sandbox
 
 import (
-	"fmt"
-	"strings"
-
 	"agent-sandbox/internal/agent"
 )
 
@@ -16,54 +13,12 @@ type Options struct {
 	Prompt string
 }
 
-// Usage is the synopsis printed on a usage error, one line per form.
-func Usage(program string) string {
-	return fmt.Sprintf(
-		"Usage: %s <branch-name> --agent <%s> [--model <model>] [--push] <prompt...>\n"+
-			"       %s worktree-list\n"+
-			"       %s worktree-delete -b <branch-name> [--force]",
-		program, strings.Join(agent.Names(), "|"), program, program,
-	)
-}
-
-// ParseArgs parses the arguments after the program name. The branch name comes
-// first, then the options, then the prompt.
-func ParseArgs(args []string) (Options, error) {
-	if len(args) < 2 {
-		return Options{}, UsageError{}
-	}
-	if strings.HasPrefix(args[0], "--") {
-		return Options{}, usageErrorf("the branch name must come first, before any option")
-	}
-
-	opts := Options{Branch: args[0]}
-	args = args[1:]
-	agentName := ""
-
-	for len(args) > 0 && strings.HasPrefix(args[0], "--") {
-		switch args[0] {
-		case "--agent":
-			if len(args) < 2 {
-				return Options{}, UsageError{}
-			}
-			agentName, args = args[1], args[2:]
-		case "--model":
-			if len(args) < 2 {
-				return Options{}, UsageError{}
-			}
-			opts.Model, args = args[1], args[2:]
-		case "--push":
-			opts.Push, args = true, args[1:]
-		default:
-			return Options{}, usageErrorf("unknown option: %s", args[0])
-		}
-	}
-
-	if len(args) < 1 {
-		return Options{}, UsageError{}
-	}
-	opts.Prompt = strings.Join(args, " ")
-
+// NewOptions turns the values the command line carried into one invocation,
+// resolving the agent name and filling in the model the agent defaults to. The
+// command line itself is parsed by the caller; what is left here is the part
+// that needs to know the agents, which is why an unusable name comes back as a
+// UsageError rather than as a plain failure.
+func NewOptions(branch, agentName, model, prompt string, push bool) (Options, error) {
 	if agentName == "" {
 		return Options{}, usageErrorf("--agent is required (%s)", agent.NamesProse())
 	}
@@ -72,12 +27,27 @@ func ParseArgs(args []string) (Options, error) {
 	if err != nil {
 		return Options{}, UsageError{err}
 	}
-	opts.Agent = selected
 
-	if opts.Model == "" {
-		opts.Model = selected.DefaultModel()
+	// An empty model is not an omission to report: it means the agent resolves
+	// the model itself, and DefaultModel says so by returning an empty string.
+	if model == "" {
+		model = selected.DefaultModel()
 	}
-	return opts, nil
+
+	return Options{
+		Branch: branch,
+		Agent:  selected,
+		Model:  model,
+		Push:   push,
+		Prompt: prompt,
+	}, nil
+}
+
+// AgentNames are the agent names the --agent flag accepts, in the order they
+// are offered. The command line needs them for its help text and its
+// completions, and this keeps it from having to know the agent package.
+func AgentNames() []string {
+	return agent.Names()
 }
 
 // FullPrompt is the prompt handed to the agent: the user's instruction plus the
