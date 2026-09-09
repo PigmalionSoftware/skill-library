@@ -4,6 +4,13 @@ Colección de **skills** (habilidades) para clientes de agentes de IA (como Clau
 
 Cada skill vive en su propia carpeta dentro de `skills/` y se define en un archivo `SKILL.md`.
 
+## Instalación
+
+```bash
+npx skills add PigmalionSoftware/skill-library
+```
+
+
 ## Skills disponibles
 
 | Skill | Descripción |
@@ -61,4 +68,3 @@ agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--
 Requiere Docker, ejecutarse dentro de un repositorio Git, y tener la configuración del agente
 ya autenticada en el host (`~/.codex`, `~/.claude`, `~/.config/opencode` o `~/.pi/agent`
 según corresponda): las credenciales salen de ahí, nunca de variables de entorno.
-
