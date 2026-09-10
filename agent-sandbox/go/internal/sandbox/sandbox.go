@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	agentsandbox "agent-sandbox"
 	"agent-sandbox/internal/agent"
 	"agent-sandbox/internal/docker"
 	"agent-sandbox/internal/git"
@@ -25,6 +24,15 @@ const imageName = "agent-sandbox"
 
 // workspace is where the worktree is mounted, matching the image's WORKDIR.
 const workspace = "/workspace"
+
+// External images run as the invoking host UID/GID, which need not have an
+// entry or a writable home in the image's passwd database. Keeping these paths
+// under /tmp gives Codex and language tools a disposable writable home without
+// changing the host-mounted CODEX_HOME that carries authentication.
+const (
+	externalHome  = "/tmp/agent-sandbox-home"
+	externalCache = "/tmp/agent-sandbox-cache"
+)
 
 // semver matches the version inside an agent's --version output, which is
 // rarely the bare number.
@@ -43,13 +51,13 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 		return 0, err
 	}
 
-	client, err := docker.New(imageName, agentsandbox.Dockerfile)
+	client, err := imageClient(opts)
 	if err != nil {
 		return 0, err
 	}
 	defer client.Close()
 
-	if err := ensureImageLatest(ctx, client, opts.Agent, out); err != nil {
+	if err := ensureImage(ctx, client, opts, out); err != nil {
 		return 0, err
 	}
 
@@ -135,6 +143,24 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 	runOpts.Args = opts.Agent.Args(opts.Model, opts.FullPrompt())
 	runOpts.User = strconv.Itoa(os.Getuid()) + ":" + strconv.Itoa(os.Getgid())
 	runOpts.Mounts = append(runOpts.Mounts, docker.Mount{Host: worktreeDir, Container: workspace})
+	if opts.BaseImage != "" {
+		// An arbitrary Alpine base may leave a numeric host UID trying to create
+		// /.cache. XDG_CACHE_HOME gives every tool that follows the standard a
+		// disposable writable cache without replacing the homes agents configure.
+		runOpts.Env = append(runOpts.Env,
+			"XDG_CACHE_HOME="+externalCache,
+			// Claude Code discovers its command runner from SHELL. Alpine's
+			// default /bin/sh is valid for Docker but not enough for that check,
+			// so the generated image installs Bash and every agent gets its path.
+			"SHELL=/bin/bash",
+		)
+		if opts.Agent.Name() == "codex" {
+			// Codex uses CODEX_HOME for its mounted configuration and otherwise
+			// needs a normal writable home. Claude, opencode and pi each set HOME
+			// themselves, so overriding it here would hide their configuration.
+			runOpts.Env = append(runOpts.Env, "HOME="+externalHome)
+		}
+	}
 
 	return runOpts, nil
 }
@@ -174,7 +200,7 @@ func ensureImageLatest(ctx context.Context, client *docker.Client, target agent.
 	}
 	if !exists {
 		fmt.Fprintf(out, "Image %s not found. Building it.\n", imageName)
-		if err := client.Build(ctx, "", ""); err != nil {
+		if err := client.Build(ctx, nil); err != nil {
 			return err
 		}
 	}
@@ -197,7 +223,7 @@ func ensureImageLatest(ctx context.Context, client *docker.Client, target agent.
 	}
 
 	fmt.Fprintf(out, "Update available. Rebuilding %s with %s %s.\n", imageName, target.Name(), latest)
-	if err := client.Build(ctx, target.BuildArg(), latest); err != nil {
+	if err := client.Build(ctx, map[string]string{target.BuildArg(): latest}); err != nil {
 		return err
 	}
 

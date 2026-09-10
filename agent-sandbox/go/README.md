@@ -50,7 +50,7 @@ y necesita acceso a npm.
 ## Uso
 
 ```text
-agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--push] <prompt...>
+agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--base-image <imagen>] [--push] <prompt...>
 ```
 
 El branch debe ser el primer argumento. El worktree se crea como directorio
@@ -63,11 +63,50 @@ activo en otro worktree.
 | `<branch>` | Branch para el worktree aislado. |
 | `--agent` | Obligatorio. Uno de `codex`, `claude`, `opencode` o `pi`. |
 | `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
+| `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
 | `--push` | Al finalizar, agrega todos los cambios, crea un commit cuyo mensaje es el prompt y hace `git push --set-upstream origin <branch>`. |
 | `<prompt...>` | Instrucción para el agente. Usá comillas para conservarla como una sola cadena. |
 
 Sin `--push`, los cambios quedan sin commitear en el worktree. Con `--push`, si
 el agente no produjo cambios, no se crea ningún commit.
+
+### Imagen base externa
+
+`--base-image` permite que el agente elegido use una imagen Alpine, Debian,
+Ubuntu, Fedora, RHEL 8/9, UBI 8/9 o Amazon Linux 2023 que ya tiene el runtime
+del proyecto. Por ejemplo,
+`golang:1.26-alpine` deja disponibles Go, `gofmt` y `go test` dentro del
+contenedor:
+
+```bash
+agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run gofmt and go test ./..., then fix failures"
+```
+
+La primera ejecución construye una imagen local derivada e instala Node.js,
+npm, Bash, Codex, Claude Code, opencode, pi, ripgrep, certificados CA, curl y
+Git.
+Las ejecuciones siguientes reutilizan esa imagen para la misma referencia base.
+La imagen detecta `apk` para Alpine, `apt-get` para Debian y Ubuntu, `dnf` para
+Fedora/RHEL/UBI/Amazon Linux, o `microdnf` para UBI minimal. Las otras familias
+fallan durante el build con un mensaje explícito. Alpine instala Node.js y npm
+desde sus paquetes; Debian, Ubuntu y las bases RPM usan el repositorio firmado
+de NodeSource para instalar Node.js 22, que incluye npm y cumple el mínimo de
+Claude Code.
+
+Una imagen RHEL debe incluir repositorios habilitados y una suscripción válida
+si la requiere: el sandbox no monta credenciales ni entitlement certificates del
+host. Esta primera versión tampoco habilita EPEL, CRB/CodeReady Builder ni
+soporta `yum`; si los repositorios activos no contienen un paquete requerido
+como `ripgrep`, el build falla mostrando el error del gestor de paquetes.
+
+La imagen derivada no se actualiza automáticamente. Para forzar un nuevo build,
+listá las imágenes `agent-sandbox-base-*` y eliminá explícitamente la
+que corresponde a la base elegida:
+
+```bash
+docker image ls 'agent-sandbox-base-*'
+docker image rm <IMAGE_ID>
+```
 
 ### Modelos
 
@@ -94,6 +133,12 @@ Dejar que opencode resuelva su modelo configurado:
 
 ```bash
 agent-sandbox update-copy --agent opencode "update the empty-state copy"
+```
+
+Ejecutar Codex con el toolchain Go de una base Alpine:
+
+```bash
+agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run go test ./... and fix failures"
 ```
 
 ## Gestionar worktrees creados por el sandbox
@@ -123,5 +168,3 @@ agent-sandbox worktree-delete-all --yes
 `worktree-delete-all` siempre elimina los cambios sin commitear después de la
 confirmación (o inmediatamente con `--yes`). No ejecutes los comandos de
 eliminación desde el worktree que querés borrar.
-
-

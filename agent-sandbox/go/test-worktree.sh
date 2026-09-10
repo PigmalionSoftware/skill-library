@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Runs the worktree lifecycle with claude — create, list, delete — and shows
-# that the state file, not git, decides what the verbs can see. Nothing is
-# asserted: read the output.
+# Runs the worktree lifecycle with claude on golang:1.26-alpine — create, list,
+# delete — and shows that the state file, not git, decides what the verbs can
+# see. It also proves that the external image's Go toolchain is available.
+# Nothing is asserted: read the output.
 #
 # Needs Docker and an authenticated claude. Point XDG_CONFIG_HOME at a scratch
 # directory to keep the real ~/.config/agent-sandbox out of it.
@@ -33,9 +34,11 @@ show_state() {
   cat -- "$state" 2>/dev/null || printf '(no state file)\n'
 }
 
-# One sandbox run: creates ../tmp-run-test and appends its line to the state
-# file. A second run would make the plural wording of the prompt visible.
-run tmp-run-test --agent claude --model opus "create a hello.txt file"
+# One sandbox run: builds or reuses the image derived from golang:1.26-alpine,
+# creates ../tmp-run-test, and appends its line to the state file. It must show
+# Go 1.26 before creating hello.txt. A second run reuses the derived image.
+run tmp-run-test --agent claude --model opus --base-image golang:1.26-alpine \
+  "run go version, then create a file named hello.txt at the repository root containing the text hello world"
 show_state
 
 # A worktree the sandbox did not create. Git knows it, the state file does not,

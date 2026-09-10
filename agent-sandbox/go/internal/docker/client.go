@@ -40,7 +40,9 @@ type RunOptions struct {
 	Tmpfs  []Tmpfs
 }
 
-// Client runs containers of a single image, built from a single Dockerfile.
+// Client runs containers of a single image, built from the Dockerfile supplied
+// by its caller. The embedded sandbox and generated external-base images share
+// the same Docker lifecycle after their definitions have been selected.
 type Client struct {
 	api        *client.Client
 	image      string
@@ -52,7 +54,8 @@ type Client struct {
 }
 
 // New connects to the Docker daemon described by the environment and negotiates
-// an API version with it. dockerfile is the image definition, used by Build.
+// an API version with it. dockerfile is the image definition Build sends to the
+// daemon; it may be the embedded default or a generated definition.
 func New(image, dockerfile string) (*Client, error) {
 	api, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

@@ -71,6 +71,12 @@ func (c *Client) Output(ctx context.Context, entrypoint string, args ...string) 
 // Run runs the agent in the sandbox, wiring the process streams to it, and
 // returns the agent's own exit code.
 func (c *Client) Run(ctx context.Context, opts RunOptions) (int, error) {
+	env, err := c.runtimeEnv(ctx, opts.Env)
+	if err != nil {
+		return 0, err
+	}
+	opts.Env = env
+
 	created, err := c.api.ContainerCreate(ctx, containerConfig(c.image, opts), hostConfig(opts), nil, nil, "")
 	if err != nil {
 		return 0, fmt.Errorf("creating container: %w", err)
@@ -131,6 +137,45 @@ func (c *Client) Run(ctx context.Context, opts RunOptions) (int, error) {
 		return 0, fmt.Errorf("streaming container output: %w", err)
 	}
 	return status, nil
+}
+
+// runtimeEnv layers the sandbox's explicit environment over the image's own
+// environment. Supplying Config.Env to the Engine replaces the image values,
+// rather than adding to them, so forwarding only agent settings would discard
+// a language image's PATH (for example, /usr/local/go/bin in golang:alpine).
+func (c *Client) runtimeEnv(ctx context.Context, overrides []string) ([]string, error) {
+	image, err := c.api.ImageInspect(ctx, c.image)
+	if err != nil {
+		return nil, fmt.Errorf("inspecting image environment for %s: %w", c.image, err)
+	}
+	return mergeEnv(image.Config.Env, overrides), nil
+}
+
+// mergeEnv preserves the image order and replaces a value only when the
+// sandbox explicitly owns the same variable. That lets agent-specific settings
+// such as CODEX_HOME win without losing unrelated image configuration.
+func mergeEnv(imageEnv, overrides []string) []string {
+	merged := append([]string(nil), imageEnv...)
+	positions := make(map[string]int, len(merged))
+	for i, entry := range merged {
+		positions[envName(entry)] = i
+	}
+
+	for _, override := range overrides {
+		name := envName(override)
+		if i, ok := positions[name]; ok {
+			merged[i] = override
+			continue
+		}
+		positions[name] = len(merged)
+		merged = append(merged, override)
+	}
+	return merged
+}
+
+func envName(entry string) string {
+	name, _, _ := strings.Cut(entry, "=")
+	return name
 }
 
 // containerConfig translates the run options into the container's own settings.

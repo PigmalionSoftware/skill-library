@@ -16,9 +16,10 @@ import (
 
 const dockerfileName = "Dockerfile"
 
-// Build builds the image. buildArg, when both it and value are non-empty, pins
-// one Dockerfile ARG so a single agent can be upgraded.
-func (c *Client) Build(ctx context.Context, buildArg, value string) error {
+// Build builds the image. Build arguments let callers pin an installed agent or
+// parameterize a generated Dockerfile without ever interpolating user input
+// into its source.
+func (c *Client) Build(ctx context.Context, args map[string]string) error {
 	buildContext, err := c.buildContext()
 	if err != nil {
 		return err
@@ -29,8 +30,11 @@ func (c *Client) Build(ctx context.Context, buildArg, value string) error {
 		Dockerfile: dockerfileName,
 		Remove:     true,
 	}
-	if buildArg != "" && value != "" {
-		opts.BuildArgs = map[string]*string{buildArg: &value}
+	if len(args) > 0 {
+		opts.BuildArgs = make(map[string]*string, len(args))
+		for name, value := range args {
+			opts.BuildArgs[name] = &value
+		}
 	}
 
 	resp, err := c.api.ImageBuild(ctx, buildContext, opts)

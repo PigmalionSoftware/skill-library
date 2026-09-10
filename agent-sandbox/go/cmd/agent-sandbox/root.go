@@ -13,6 +13,7 @@ func newRootCmd() (*cobra.Command, *int) {
 		status    int
 		agentName string
 		model     string
+		baseImage string
 		push      bool
 	)
 
@@ -26,6 +27,7 @@ func newRootCmd() (*cobra.Command, *int) {
 			"which is mounted into the container; no credentials are passed as environment\n" +
 			"variables, so the agent must already be authenticated on the host.",
 		Example: "  agent-sandbox fix-login --agent codex \"fix the login redirect loop\"\n" +
+			"  agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine \"run go test ./...\"\n" +
 			"  agent-sandbox fix-login --agent claude --model sonnet --push \"add a test for it\"",
 
 		// Args has to be set even where cobra's default would do, because a nil
@@ -46,7 +48,7 @@ func newRootCmd() (*cobra.Command, *int) {
 			// the sentence it was before the shell took it apart, so that a
 			// prompt of more than one word need not be quoted. A prompt holding
 			// a word that starts with a dash does, or the flag parser claims it.
-			opts, err := sandbox.NewOptions(args[0], agentName, model, strings.Join(args[1:], " "), push)
+			opts, err := sandbox.NewOptions(args[0], agentName, model, baseImage, strings.Join(args[1:], " "), push)
 			if err != nil {
 				return err
 			}
@@ -58,6 +60,7 @@ func newRootCmd() (*cobra.Command, *int) {
 
 	cmd.Flags().StringVar(&agentName, "agent", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
 	cmd.Flags().StringVar(&model, "model", "", "model to use (default: the agent's own)")
+	cmd.Flags().StringVar(&baseImage, "base-image", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
 	cmd.Flags().BoolVar(&push, "push", false, "commit the agent's work and push the branch")
 
 	// pflag reports a malformed flag through the error func of the command it
