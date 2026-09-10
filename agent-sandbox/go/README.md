@@ -72,36 +72,32 @@ el agente no produjo cambios, no se crea ningún commit.
 
 ### Imagen base externa
 
-`--base-image` permite que el agente elegido use una imagen Alpine, Debian,
-Ubuntu, Fedora, RHEL 8/9, UBI 8/9 o Amazon Linux 2023 que ya tiene el runtime
-del proyecto. Por ejemplo,
-`golang:1.26-alpine` deja disponibles Go, `gofmt` y `go test` dentro del
-contenedor:
+`--base-image` usa una imagen que ya trae el runtime del proyecto. Se admiten
+Alpine, Debian, Ubuntu, Fedora, RHEL 8/9, UBI 8/9 y Amazon Linux 2023. Por
+ejemplo, `golang:1.26-alpine` deja disponibles Go, `gofmt` y `go test` dentro
+del contenedor:
 
 ```bash
 agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run gofmt and go test ./..., then fix failures"
 ```
 
-La primera ejecución construye una imagen local derivada e instala Node.js,
-npm, Bash, Codex, Claude Code, opencode, pi, ripgrep, certificados CA, curl y
-Git.
-Las ejecuciones siguientes reutilizan esa imagen para la misma referencia base.
-La imagen detecta `apk` para Alpine, `apt-get` para Debian y Ubuntu, `dnf` para
-Fedora/RHEL/UBI/Amazon Linux, o `microdnf` para UBI minimal. Las otras familias
-fallan durante el build con un mensaje explícito. Alpine instala Node.js y npm
-desde sus paquetes; Debian, Ubuntu y las bases RPM usan el repositorio firmado
-de NodeSource para instalar Node.js 22, que incluye npm y cumple el mínimo de
-Claude Code.
+La primera ejecución crea una imagen local derivada e instala lo necesario para
+ejecutar los agentes: Node.js, npm, Bash, Codex, Claude Code, opencode, pi,
+ripgrep, certificados CA, curl y Git. Las siguientes reutilizan esa imagen para
+la misma base.
 
-Una imagen RHEL debe incluir repositorios habilitados y una suscripción válida
-si la requiere: el sandbox no monta credenciales ni entitlement certificates del
-host. Esta primera versión tampoco habilita EPEL, CRB/CodeReady Builder ni
-soporta `yum`; si los repositorios activos no contienen un paquete requerido
-como `ripgrep`, el build falla mostrando el error del gestor de paquetes.
+La base debe ofrecer `apk` (Alpine), `apt-get` (Debian/Ubuntu), `dnf`
+(Fedora/RHEL/UBI/Amazon Linux) o `microdnf` (UBI minimal). Las demás fallan
+durante el build. Alpine instala Node.js desde sus paquetes; las otras bases
+usan Node.js 22 de NodeSource.
 
-La imagen derivada no se actualiza automáticamente. Para forzar un nuevo build,
-listá las imágenes `agent-sandbox-base-*` y eliminá explícitamente la
-que corresponde a la base elegida:
+En RHEL, la imagen debe tener repositorios habilitados y, si corresponde, una
+suscripción válida: el sandbox no monta credenciales del host. No habilita
+EPEL ni CRB/CodeReady Builder, ni soporta `yum`; si falta un paquete como
+`ripgrep`, el build falla con el error del gestor de paquetes.
+
+La imagen derivada no se actualiza sola. Para reconstruirla, eliminá la imagen
+correspondiente:
 
 ```bash
 docker image ls 'agent-sandbox-base-*'
@@ -143,9 +139,12 @@ agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run go
 
 ## Gestionar worktrees creados por el sandbox
 
-El comando registra los worktrees que creó en
-`~/.config/agent-sandbox/worktrees.jsonl`. Los siguientes subcomandos solo ven
-y eliminan esas entradas; no afectan worktrees creados manualmente.
+El comando crea los worktrees en
+`~/.config/agent-sandbox/worktrees/<repo>-<hash>/<branch>` y registra los que
+creó en `~/.config/agent-sandbox/worktrees.jsonl`. El identificador del
+repositorio evita que branches con el mismo nombre en repositorios distintos
+colisionen. Los siguientes subcomandos solo ven y eliminan esas entradas; no
+afectan worktrees creados manualmente.
 
 ```bash
 # Mostrar los worktrees registrados para el repositorio actual.

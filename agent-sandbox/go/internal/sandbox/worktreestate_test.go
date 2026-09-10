@@ -4,28 +4,62 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestStateFile(t *testing.T) {
+func TestConfigPathsDoesNotCreateDirectories(t *testing.T) {
 	configDir := setupWorktreeState(t)
 
-	path, err := stateFile()
+	config, err := configPaths()
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Join(configDir, "agent-sandbox", "worktrees.jsonl")
-	if path != want {
-		t.Fatalf("stateFile() = %q, want %q", path, want)
+	wantStateFile := filepath.Join(configDir, "agent-sandbox", "worktrees.jsonl")
+	if config.StateFile != wantStateFile {
+		t.Fatalf("Config.StateFile = %q, want %q", config.StateFile, wantStateFile)
 	}
-	if info, err := os.Stat(filepath.Dir(path)); err != nil || !info.IsDir() {
-		t.Fatalf("state directory = (%v, %v), want existing directory", info, err)
+	wantWorktreesDir := filepath.Join(configDir, "agent-sandbox", "worktrees")
+	if config.WorktreesDir != wantWorktreesDir {
+		t.Fatalf("Config.WorktreesDir = %q, want %q", config.WorktreesDir, wantWorktreesDir)
+	}
+	if _, err := os.Stat(filepath.Dir(config.WorktreesDir)); !os.IsNotExist(err) {
+		t.Fatalf("configuration directory exists before a write: %v", err)
+	}
+}
+
+func TestRepoSlugScopesSameNamedRepositoriesAndResolvesSymlinks(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "one", "api")
+	second := filepath.Join(root, "two", "api")
+	if err := os.MkdirAll(first, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(second, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	firstSlug := repoSlug(first)
+	secondSlug := repoSlug(second)
+	if firstSlug == secondSlug {
+		t.Fatalf("repoSlug(%q) = repoSlug(%q) = %q, want distinct slugs", first, second, firstSlug)
+	}
+	if !strings.HasPrefix(firstSlug, "api-") || !strings.HasPrefix(secondSlug, "api-") {
+		t.Fatalf("repo slugs = %q, %q, want names prefixed with api-", firstSlug, secondSlug)
+	}
+
+	link := filepath.Join(root, "link")
+	if err := os.Symlink(first, link); err != nil {
+		t.Fatal(err)
+	}
+	if got := repoSlug(link); got != firstSlug {
+		t.Fatalf("repoSlug(%q) = %q, want %q", link, got, firstSlug)
 	}
 }
 
 func TestRecordWorktreeAndReadRecords(t *testing.T) {
-	setupWorktreeState(t)
+	configDir := setupWorktreeState(t)
 
 	empty, err := readRecords()
 	if err != nil {
@@ -33,6 +67,9 @@ func TestRecordWorktreeAndReadRecords(t *testing.T) {
 	}
 	if empty != nil {
 		t.Fatalf("readRecords() before writing = %#v, want nil", empty)
+	}
+	if _, err := os.Stat(filepath.Join(configDir, "agent-sandbox")); !os.IsNotExist(err) {
+		t.Fatalf("state directory exists after a read: %v", err)
 	}
 
 	records := []worktreeRecord{
@@ -54,6 +91,18 @@ func TestRecordWorktreeAndReadRecords(t *testing.T) {
 	}
 }
 
+func TestWriteRecordsCreatesStateDirectory(t *testing.T) {
+	configDir := setupWorktreeState(t)
+
+	if err := writeRecords(nil); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(configDir, "agent-sandbox", "worktrees.jsonl")
+	if info, err := os.Stat(path); err != nil || info.IsDir() {
+		t.Fatalf("state file = (%v, %v), want an existing file", info, err)
+	}
+}
+
 func TestReadRecordsSkipsMalformedLines(t *testing.T) {
 	setupWorktreeState(t)
 	record := worktreeRecord{Repo: "/repo", Path: "/worktree", Branch: "feature"}
@@ -61,10 +110,11 @@ func TestReadRecordsSkipsMalformedLines(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path, err := stateFile()
+	config, err := configPaths()
 	if err != nil {
 		t.Fatal(err)
 	}
+	path := config.StateFile
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		t.Fatal(err)

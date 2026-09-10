@@ -175,16 +175,6 @@ func findWorktree(worktrees []worktreeRecord, branch string) (worktreeRecord, bo
 	return worktreeRecord{}, false
 }
 
-// resolvePath resolves the symlinks in a path so that two spellings of the same
-// directory compare equal. A path that is no longer there keeps what it says.
-func resolvePath(path string) string {
-	resolved, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return filepath.Clean(path)
-	}
-	return resolved
-}
-
 // isInside reports whether dir is the directory at root or somewhere under it.
 // Both are resolved first, because the recorded worktree paths may not have
 // their symlinks resolved and the current directory may not either.

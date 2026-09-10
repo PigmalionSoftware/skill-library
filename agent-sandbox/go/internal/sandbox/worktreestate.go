@@ -16,26 +16,15 @@ type worktreeRecord struct {
 	Created time.Time `json:"created"`
 }
 
-// stateFile is the list of worktrees the sandbox created, kept in the user's
-// configuration directory so nothing is written inside the repository.
-func stateFile() (string, error) {
-	config, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-
-	dir := filepath.Join(config, "agent-sandbox")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "worktrees.jsonl"), nil
-}
-
 // recordWorktree adds a worktree to the state file. A run only ever appends one
 // line, so two runs starting at once cannot lose each other's entry.
 func recordWorktree(record worktreeRecord) error {
-	path, err := stateFile()
+	config, err := configPaths()
 	if err != nil {
+		return err
+	}
+	path := config.StateFile
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
 
@@ -108,10 +97,11 @@ func forgetWorktrees(repoDir string, paths []string) error {
 // readRecords is every line of the state file. A line that does not parse is
 // skipped, so one bad write cannot make the worktree verbs unusable.
 func readRecords() ([]worktreeRecord, error) {
-	path, err := stateFile()
+	config, err := configPaths()
 	if err != nil {
 		return nil, err
 	}
+	path := config.StateFile
 
 	// No file yet is an empty list, which is what a first run finds.
 	file, err := os.Open(path)
@@ -138,8 +128,12 @@ func readRecords() ([]worktreeRecord, error) {
 // writeRecords replaces the state file. The new content is written beside it
 // and renamed over it, so an interrupted write cannot leave the list truncated.
 func writeRecords(records []worktreeRecord) error {
-	path, err := stateFile()
+	config, err := configPaths()
 	if err != nil {
+		return err
+	}
+	path := config.StateFile
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
 

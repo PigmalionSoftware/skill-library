@@ -57,8 +57,11 @@ build its own image from anywhere with no build context beyond that one file.
 - **Credentials only ever arrive as bind mounts** of the agent's host config directory. No
   API keys are passed as environment variables, and the agent must already be authenticated on
   the host — a missing config directory is a hard error (`hostConfigError`), never created.
-- **The worktree is a sibling of the current working directory**, not of the repo root:
-  `filepath.Join(filepath.Dir(cwd), branch)`. Existing paths are refused rather than reused.
+- **The worktree lives under the user's configuration directory**, at
+  `~/.config/agent-sandbox/worktrees/<repo>-<hash>/<branch>`. The repository
+  basename plus a short hash of its resolved path keeps common branch names in
+  unrelated repositories from colliding. Existing paths are refused rather
+  than reused.
 - **`~/.config/agent-sandbox/worktrees.jsonl` is the source of truth for what the sandbox
   created**, one JSON line per worktree, appended by a run and rewritten by the delete verbs
   (`internal/sandbox/worktreestate.go`). Every worktree verb reads it and nothing else — the

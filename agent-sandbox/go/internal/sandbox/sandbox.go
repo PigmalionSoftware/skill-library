@@ -67,15 +67,16 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 		return 0, StatusError{Status: ExitUsage, err: err}
 	}
 
-	// The worktree is a sibling of the directory the command was run from, not
-	// of the repository root.
-	worktreeDir := filepath.Join(filepath.Dir(executionDir), opts.Branch)
-	if _, err := os.Stat(worktreeDir); err == nil {
-		return 0, fmt.Errorf("worktree path already exists: %s", worktreeDir)
+	config, err := configPaths()
+	if err != nil {
+		return 0, err
 	}
-
+	worktreeDir := filepath.Join(config.WorktreesDir, repoSlug(repo.Dir), opts.Branch)
 	if err := os.MkdirAll(filepath.Dir(worktreeDir), 0o755); err != nil {
 		return 0, err
+	}
+	if _, err := os.Stat(worktreeDir); err == nil {
+		return 0, fmt.Errorf("worktree path already exists: %s", worktreeDir)
 	}
 	newBranch := !repo.BranchExists(opts.Branch)
 	if err := repo.AddWorktree(worktreeDir, opts.Branch, newBranch); err != nil {
