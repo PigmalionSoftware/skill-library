@@ -50,25 +50,19 @@ y necesita acceso a npm.
 ## Uso
 
 ```text
-agent-sandbox <branch> --agent <codex|claude|opencode|pi> [--model <modelo>] [--base-image <imagen>] [--push] <prompt...>
+agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [-p] <prompt...>
 ```
-
-El branch debe ser el primer argumento. El worktree se crea como directorio
-hermano del directorio actual, en `../<branch>`. Si esa ruta ya existe, la
-ejecución se rechaza. Un branch existente puede reutilizarse solo si no está
-activo en otro worktree.
-
 | Parámetro | Descripción |
 | --- | --- |
-| `<branch>` | Branch para el worktree aislado. |
-| `--agent` | Obligatorio. Uno de `codex`, `claude`, `opencode` o `pi`. |
-| `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
-| `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
-| `--push` | Al finalizar, agrega todos los cambios, crea un commit cuyo mensaje es el prompt y hace `git push --set-upstream origin <branch>`. |
+| `-b`, `--branch` | Opcional. Branch para el worktree aislado; si se omite, se genera uno. |
+| `-a`, `--agent` | Obligatorio. Uno de `codex`, `claude`, `opencode` o `pi`. |
+| `-m`, `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
+| `-i`, `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
+| `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit cuyo mensaje es el prompt y hace `git push --set-upstream origin <branch>`. |
 | `<prompt...>` | Instrucción para el agente. Usá comillas para conservarla como una sola cadena. |
 
-Sin `--push`, los cambios quedan sin commitear en el worktree. Con `--push`, si
-el agente no produjo cambios, no se crea ningún commit.
+Sin `-p` o `--push`, los cambios quedan sin commitear en el worktree. Con `-p`
+o `--push`, si el agente no produjo cambios, no se crea ningún commit.
 
 ### Imagen base externa
 
@@ -78,7 +72,7 @@ ejemplo, `golang:1.26-alpine` deja disponibles Go, `gofmt` y `go test` dentro
 del contenedor:
 
 ```bash
-agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run gofmt and go test ./..., then fix failures"
+agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine "run gofmt and go test ./..., then fix failures"
 ```
 
 La primera ejecución crea una imagen local derivada e instala lo necesario para
@@ -116,25 +110,25 @@ Codex, `sonnet` para Claude Code y `proveedor/modelo` para opencode o pi.
 Crear un worktree para Codex y dejar sus cambios listos para revisar:
 
 ```bash
-agent-sandbox fix-login --agent codex --model gpt-5.6-sol "fix the login redirect loop"
+agent-sandbox -a codex -m gpt-5.6-sol "fix the login redirect loop"
 ```
 
 Ejecutar Claude Code y publicar el branch al terminar:
 
 ```bash
-agent-sandbox add-test --agent claude --model sonnet --push "add a regression test for the login redirect"
+agent-sandbox -b add-test -a claude -m sonnet -p "add a regression test for the login redirect"
 ```
 
 Dejar que opencode resuelva su modelo configurado:
 
 ```bash
-agent-sandbox update-copy --agent opencode "update the empty-state copy"
+agent-sandbox -b update-copy -a opencode "update the empty-state copy"
 ```
 
 Ejecutar Codex con el toolchain Go de una base Alpine:
 
 ```bash
-agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine "run go test ./... and fix failures"
+agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine "run go test ./... and fix failures"
 ```
 
 ## Gestionar worktrees creados por el sandbox

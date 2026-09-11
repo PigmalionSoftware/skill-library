@@ -37,7 +37,7 @@ show_state() {
 # One sandbox run: builds or reuses the image derived from golang:1.26-alpine,
 # creates ../tmp-run-test, and appends its line to the state file. It must show
 # Go 1.26 before creating hello.txt. A second run reuses the derived image.
-run tmp-run-test --agent claude --model opus --base-image golang:1.26-alpine \
+run -b tmp-run-test -a claude -m opus -i golang:1.26-alpine \
   "run go version, then create a file named hello.txt at the repository root containing the text hello world"
 show_state
 

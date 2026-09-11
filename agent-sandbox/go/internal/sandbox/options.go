@@ -2,6 +2,11 @@ package sandbox
 
 import (
 	"agent-sandbox/internal/agent"
+	"crypto/rand"
+	"fmt"
+	"math/big"
+	"strconv"
+	"strings"
 )
 
 // Options is one invocation of the sandbox.
@@ -34,6 +39,14 @@ func NewOptions(branch, agentName, model, baseImage, prompt string, push bool) (
 		model = selected.DefaultModel()
 	}
 
+	if branch == "" {
+		randomBranch, err := generateBranchName()
+		if err != nil {
+			return Options{}, err
+		}
+		branch = randomBranch
+	}
+
 	return Options{
 		Branch:    branch,
 		Agent:     selected,
@@ -55,4 +68,31 @@ func AgentNames() []string {
 // house rules for a sandbox run.
 func (o Options) FullPrompt() string {
 	return o.Prompt + " do not use superpowerer or any spec skills, you decide all,  do not commit or push changes to git"
+}
+
+// generateBranchName creates a lowercase-letter name with a six-digit suffix
+// without a host dictionary or an additional package. A collision is reported
+// by the sandbox rather than being silently retried.
+func generateBranchName() (string, error) {
+	const (
+		letters    = "abcdefghijklmnopqrstuvwxyz"
+		wordLength = 8
+	)
+
+	var word strings.Builder
+	word.Grow(wordLength)
+	letterLimit := big.NewInt(int64(len(letters)))
+	for range wordLength {
+		index, err := rand.Int(rand.Reader, letterLimit)
+		if err != nil {
+			return "", fmt.Errorf("generate random branch letters: %w", err)
+		}
+		word.WriteByte(letters[index.Int64()])
+	}
+
+	number, err := rand.Int(rand.Reader, big.NewInt(900000))
+	if err != nil {
+		return "", fmt.Errorf("generate random branch number: %w", err)
+	}
+	return word.String() + "-" + strconv.FormatInt(number.Int64()+100000, 10), nil
 }

@@ -10,25 +10,26 @@ import (
 
 func newRootCmd() (*cobra.Command, *int) {
 	var (
-		status    int
-		agentName string
-		model     string
-		baseImage string
-		push      bool
+		status     int
+		branchName string
+		agentName  string
+		model      string
+		baseImage  string
+		push       bool
 	)
 
 	cmd := &cobra.Command{
-		Use:   "agent-sandbox <branch-name> <prompt>",
+		Use:   "agent-sandbox [-b <branch-name>] -a <agent> [flags] <prompt>",
 		Short: "Run a coding agent in a container, on a git worktree of its own",
 		Long: "Run a coding agent inside the agent-sandbox container, on a git worktree of\n" +
-			"its own, so it never touches the current working copy. The worktree is created\n" +
-			"beside the current directory, at ../<branch-name>.\n\n" +
+			"its own, so it never touches the current working copy. Optionally supply the\n" +
+			"worktree branch with -b or --branch; otherwise one is generated.\n\n" +
 			"Authentication comes from the agent's configuration directory on the host,\n" +
 			"which is mounted into the container; no credentials are passed as environment\n" +
 			"variables, so the agent must already be authenticated on the host.",
-		Example: "  agent-sandbox fix-login --agent codex \"fix the login redirect loop\"\n" +
-			"  agent-sandbox fix-go-tests --agent codex --base-image golang:1.26-alpine \"run go test ./...\"\n" +
-			"  agent-sandbox fix-login --agent claude --model sonnet --push \"add a test for it\"",
+		Example: "  agent-sandbox -a codex \"fix the login redirect loop\"\n" +
+			"  agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine \"run go test ./...\"\n" +
+			"  agent-sandbox --branch fix-login --agent claude --model sonnet --push \"add a test for it\"",
 
 		// Args has to be set even where cobra's default would do, because a nil
 		// Args makes cobra reject the first argument of a root command that has
@@ -48,7 +49,7 @@ func newRootCmd() (*cobra.Command, *int) {
 			// the sentence it was before the shell took it apart, so that a
 			// prompt of more than one word need not be quoted. A prompt holding
 			// a word that starts with a dash does, or the flag parser claims it.
-			opts, err := sandbox.NewOptions(args[0], agentName, model, baseImage, strings.Join(args[1:], " "), push)
+			opts, err := sandbox.NewOptions(branchName, agentName, model, baseImage, strings.Join(args[0:], " "), push)
 			if err != nil {
 				return err
 			}
@@ -58,10 +59,11 @@ func newRootCmd() (*cobra.Command, *int) {
 		},
 	}
 
-	cmd.Flags().StringVar(&agentName, "agent", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
-	cmd.Flags().StringVar(&model, "model", "", "model to use (default: the agent's own)")
-	cmd.Flags().StringVar(&baseImage, "base-image", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
-	cmd.Flags().BoolVar(&push, "push", false, "commit the agent's work and push the branch")
+	cmd.Flags().StringVarP(&agentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
+	cmd.Flags().StringVarP(&branchName, "branch", "b", "", "worktree branch name (default: generated)")
+	cmd.Flags().StringVarP(&model, "model", "m", "", "model to use (default: the agent's own)")
+	cmd.Flags().StringVarP(&baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
+	cmd.Flags().BoolVarP(&push, "push", "p", false, "commit the agent's work and push the branch")
 
 	// pflag reports a malformed flag through the error func of the command it
 	// was parsing, or of the nearest parent that has one, so this covers the
@@ -83,7 +85,7 @@ func newRootCmd() (*cobra.Command, *int) {
 // the synopsis says everything there is to say about the shape of a run — so it
 // is reported unexplained, which is what a zero UsageError means.
 func runArgs(_ *cobra.Command, args []string) error {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return sandbox.UsageError{}
 	}
 	return nil
