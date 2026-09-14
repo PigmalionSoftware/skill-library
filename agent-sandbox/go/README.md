@@ -50,7 +50,7 @@ y necesita acceso a npm.
 ## Uso
 
 ```text
-agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [-p] [-c <mensaje-commit>] <prompt...>
+agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [-p] [-c <mensaje-commit>] (<prompt...> | -f <archivo-prompt>)
 ```
 | Parámetro | Descripción |
 | --- | --- |
@@ -59,11 +59,16 @@ agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <ima
 | `-m`, `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
 | `-i`, `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
 | `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit y hace `git push --set-upstream origin <branch>`. |
-| `-c`, `--commit-message` | Opcional. Mensaje del commit creado por `-p` o `--push`; si se omite, usa el prompt. Sin `-p` o `--push`, no tiene efecto. |
-| `<prompt...>` | Instrucción para el agente. Usá comillas para conservarla como una sola cadena. |
+| `-c`, `--commit-message` | Opcional. Mensaje del commit creado por `-p` o `--push`; si se omite, usa el prompt resuelto. Sin `-p` o `--push`, no tiene efecto. |
+| `-f`, `--file-prompt` | Archivo cuyo contenido se usa como instrucción para el agente, en lugar de `<prompt...>`. |
+| `<prompt...>` | Instrucción para el agente, en lugar de `-f` o `--file-prompt`. Usá comillas para conservarla como una sola cadena. |
 
 Sin `-p` o `--push`, los cambios quedan sin commitear en el worktree. Con `-p`
-o `--push`, si el agente no produjo cambios, no se crea ningún commit.
+o `--push`, si el agente no produjo cambios, no se crea ningún commit. Hay que
+proporcionar exactamente una fuente de prompt: `<prompt...>` o `-f`/`--file-prompt`.
+No se pueden usar juntas. Si se usa `--push` sin `--commit-message`, el contenido
+del archivo se convierte en el mensaje de commit por defecto cuando se eligió
+`--file-prompt`.
 
 ### Imagen base externa
 
@@ -126,10 +131,15 @@ Dejar que opencode resuelva su modelo configurado:
 agent-sandbox -b update-copy -a opencode "update the empty-state copy"
 ```
 
-Ejecutar Codex con el toolchain Go de una base Alpine:
+Ejecutar Codex con imagen de golang
 
 ```bash
 agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine "run go test ./... and fix failures"
+```
+
+Obtener prompt de archivo
+```bash
+agent-sandbox -b prompt-file-test -a codex -f prompt.md
 ```
 
 ## Gestionar worktrees creados por el sandbox

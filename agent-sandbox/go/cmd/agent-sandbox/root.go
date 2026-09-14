@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,20 +18,24 @@ func newRootCmd() (*cobra.Command, *int) {
 		baseImage     string
 		push          bool
 		commitMessage string
+		filePrompt    string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "agent-sandbox [-b <branch-name>] -a <agent> [flags] <prompt>",
+		Use:   "agent-sandbox [-b <branch-name>] -a <agent> [flags] (<prompt...> | -f <prompt-file>)",
 		Short: "Run a coding agent in a container, on a git worktree of its own",
 		Long: "Run a coding agent inside the agent-sandbox container, on a git worktree of\n" +
 			"its own, so it never touches the current working copy. Optionally supply the\n" +
 			"worktree branch with -b or --branch; otherwise one is generated.\n\n" +
+			"Supply the agent prompt directly as positional arguments or with -f or\n" +
+			"--file-prompt; exactly one source is required.\n\n" +
 			"Authentication comes from the agent's configuration directory on the host,\n" +
 			"which is mounted into the container; no credentials are passed as environment\n" +
 			"variables, so the agent must already be authenticated on the host.",
 		Example: "  agent-sandbox -a codex \"fix the login redirect loop\"\n" +
 			"  agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine \"run go test ./...\"\n" +
-			"  agent-sandbox --branch fix-login --agent claude --model sonnet --push \"add a test for it\"",
+			"  agent-sandbox --branch fix-login --agent claude --model sonnet --push \"add a test for it\"\n" +
+			"  agent-sandbox -a codex -f prompt.md",
 
 		// Args has to be set even where cobra's default would do, because a nil
 		// Args makes cobra reject the first argument of a root command that has
@@ -58,6 +63,7 @@ func newRootCmd() (*cobra.Command, *int) {
 				Push:          push,
 				Prompt:        strings.Join(args, " "),
 				CommitMessage: commitMessage,
+				FilePrompt:    filePrompt,
 			})
 			if err != nil {
 				return err
@@ -73,7 +79,8 @@ func newRootCmd() (*cobra.Command, *int) {
 	cmd.Flags().StringVarP(&model, "model", "m", "", "model to use (default: the agent's own)")
 	cmd.Flags().StringVarP(&baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
 	cmd.Flags().BoolVarP(&push, "push", "p", false, "commit the agent's work and push the branch")
-	cmd.Flags().StringVarP(&commitMessage, "commit-message", "c", "", "commit message (default: prompt)")
+	cmd.Flags().StringVarP(&commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
+	cmd.Flags().StringVarP(&filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
 
 	// pflag reports a malformed flag through the error func of the command it
 	// was parsing, or of the nearest parent that has one, so this covers the
@@ -90,13 +97,22 @@ func newRootCmd() (*cobra.Command, *int) {
 	return cmd, &status
 }
 
-// runArgs validates the positional arguments of a run: the branch name, then
-// the prompt. Too few of them is not a mistake worth a sentence of its own —
-// the synopsis says everything there is to say about the shape of a run — so it
-// is reported unexplained, which is what a zero UsageError means.
-func runArgs(_ *cobra.Command, args []string) error {
-	if len(args) < 1 {
+// runArgs requires exactly one prompt source. A file prompt removes shell
+// quoting from longer instructions, but accepting it alongside positional text
+// would silently discard the latter when Options resolves the file contents.
+func runArgs(cmd *cobra.Command, args []string) error {
+	filePrompt, err := cmd.Flags().GetString("file-prompt")
+	if err != nil {
+		return sandbox.NewUsageError(err)
+	}
+
+	hasPositionalPrompt := len(args) > 0
+	hasFilePrompt := filePrompt != ""
+	if !hasPositionalPrompt && !hasFilePrompt {
 		return sandbox.UsageError{}
+	}
+	if hasPositionalPrompt && hasFilePrompt {
+		return sandbox.NewUsageError(errors.New("prompt and --file-prompt cannot be used together"))
 	}
 	return nil
 }

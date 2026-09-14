@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"agent-sandbox/internal/agent"
+	"agent-sandbox/internal/utils"
 	"crypto/rand"
 	"fmt"
 	"math/big"
@@ -19,6 +20,7 @@ type Options struct {
 	Push          bool
 	Prompt        string
 	CommitMessage string
+	FilePrompt    string
 }
 
 // NewOptions turns the values the command line carried into one invocation,
@@ -48,6 +50,14 @@ func NewOptions(opts Options) (Options, error) {
 			return Options{}, err
 		}
 		opts.Branch = randomBranch
+	}
+
+	if opts.FilePrompt != "" {
+		prompt, err := utils.GetContentFile(opts.FilePrompt)
+		if err != nil {
+			return Options{}, err
+		}
+		opts.Prompt = prompt
 	}
 
 	return opts, nil
