@@ -164,17 +164,6 @@ func removeWorktree(repo *git.Repo, path string, force bool, out io.Writer) erro
 	return nil
 }
 
-// findWorktree picks the worktree holding the branch. A branch is checked out
-// in at most one worktree, so the first match is the only one.
-func findWorktree(worktrees []worktreeRecord, branch string) (worktreeRecord, bool) {
-	for _, worktree := range worktrees {
-		if worktree.Branch == branch {
-			return worktree, true
-		}
-	}
-	return worktreeRecord{}, false
-}
-
 // isInside reports whether dir is the directory at root or somewhere under it.
 // Both are resolved first, because the recorded worktree paths may not have
 // their symlinks resolved and the current directory may not either.

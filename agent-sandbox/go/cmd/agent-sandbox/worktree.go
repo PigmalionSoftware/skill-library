@@ -69,3 +69,23 @@ func newWorktreeDeleteAllCmd() *cobra.Command {
 
 	return cmd
 }
+
+func newWorktreeEditorOpenCmd() *cobra.Command {
+	var branch string
+
+	cmd := &cobra.Command{
+		Use:   "worktree-editor",
+		Short: "Open vscode editor for specific worktree -b <branch-name>",
+		Args:  usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if branch == "" {
+				return sandbox.NewUsageError(errors.New("-b <branch-name> is required"))
+			}
+			return sandbox.OpenWorktree(branch)
+		},
+	}
+
+	cmd.Flags().StringVarP(&branch, "branch", "b", "", "branch whose worktree to open")
+
+	return cmd
+}

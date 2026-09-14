@@ -155,6 +155,9 @@ afectan worktrees creados manualmente.
 # Mostrar los worktrees registrados para el repositorio actual.
 agent-sandbox worktree-list
 
+# Abrir un worktree registrado en VS Code.
+agent-sandbox worktree-editor -b fix-login
+
 # Eliminar un worktree limpio y su branch.
 agent-sandbox worktree-delete --branch fix-login
 
@@ -172,3 +175,4 @@ agent-sandbox worktree-delete-all --yes
 `worktree-delete-all` siempre elimina los cambios sin commitear después de la
 confirmación (o inmediatamente con `--yes`). No ejecutes los comandos de
 eliminación desde el worktree que querés borrar.
+`worktree-editor` requiere `-b` y abre en vscode el branch worktree

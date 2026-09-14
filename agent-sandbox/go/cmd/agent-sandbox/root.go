@@ -93,7 +93,7 @@ func newRootCmd() (*cobra.Command, *int) {
 		return sandbox.AgentNames(), nil
 	})
 
-	cmd.AddCommand(newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd())
+	cmd.AddCommand(newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd(), newWorktreeEditorOpenCmd())
 	return cmd, &status
 }
 

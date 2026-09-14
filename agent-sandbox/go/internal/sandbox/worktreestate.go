@@ -64,6 +64,30 @@ func recordedWorktrees(repoDir string) ([]worktreeRecord, error) {
 	return mine, nil
 }
 
+func recordedWorktreePath(repoDir, branch string) (string, error) {
+	worktrees, err := recordedWorktrees(repoDir)
+	if err != nil {
+		return "", err
+	}
+
+	worktree, found := findWorktree(worktrees, branch)
+	if !found {
+		return "", nil
+	}
+	return worktree.Path, nil
+}
+
+// findWorktree picks the worktree holding branch. A branch is checked out in
+// at most one worktree, so the first match is the only one.
+func findWorktree(worktrees []worktreeRecord, branch string) (worktreeRecord, bool) {
+	for _, worktree := range worktrees {
+		if worktree.Branch == branch {
+			return worktree, true
+		}
+	}
+	return worktreeRecord{}, false
+}
+
 // forgetWorktrees drops the given paths of repoDir from the state file. Lines
 // belonging to other repositories are kept as they are, since nothing here can
 // speak for them.

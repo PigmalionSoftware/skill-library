@@ -163,6 +163,37 @@ func TestRecordedWorktreesFiltersByResolvedRepository(t *testing.T) {
 	}
 }
 
+func TestRecordedWorktreePathFindsOnlyTheCurrentRepositoryBranch(t *testing.T) {
+	setupWorktreeState(t)
+	repoDir := t.TempDir()
+	otherRepo := t.TempDir()
+	records := []worktreeRecord{
+		{Repo: repoDir, Path: "/worktrees/feature", Branch: "feature"},
+		{Repo: otherRepo, Path: "/worktrees/other-feature", Branch: "feature"},
+	}
+	for _, record := range records {
+		if err := recordWorktree(record); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	path, err := recordedWorktreePath(repoDir, "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != records[0].Path {
+		t.Fatalf("recordedWorktreePath() = %q, want %q", path, records[0].Path)
+	}
+
+	path, err = recordedWorktreePath(repoDir, "missing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != "" {
+		t.Fatalf("recordedWorktreePath() = %q, want empty path", path)
+	}
+}
+
 func TestForgetWorktreesRemovesOnlyMatchingRepositoryAndPath(t *testing.T) {
 	setupWorktreeState(t)
 	repoDir := t.TempDir()
