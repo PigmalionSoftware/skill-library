@@ -50,7 +50,7 @@ y necesita acceso a npm.
 ## Uso
 
 ```text
-agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [-p] <prompt...>
+agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [-p] [-c <mensaje-commit>] <prompt...>
 ```
 | Parámetro | Descripción |
 | --- | --- |
@@ -58,7 +58,8 @@ agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <ima
 | `-a`, `--agent` | Obligatorio. Uno de `codex`, `claude`, `opencode` o `pi`. |
 | `-m`, `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
 | `-i`, `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
-| `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit cuyo mensaje es el prompt y hace `git push --set-upstream origin <branch>`. |
+| `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit y hace `git push --set-upstream origin <branch>`. |
+| `-c`, `--commit-message` | Opcional. Mensaje del commit creado por `-p` o `--push`; si se omite, usa el prompt. Sin `-p` o `--push`, no tiene efecto. |
 | `<prompt...>` | Instrucción para el agente. Usá comillas para conservarla como una sola cadena. |
 
 Sin `-p` o `--push`, los cambios quedan sin commitear en el worktree. Con `-p`

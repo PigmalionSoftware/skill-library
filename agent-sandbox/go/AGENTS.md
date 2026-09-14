@@ -82,7 +82,8 @@ build its own image from anywhere with no build context beyond that one file.
   agent reports inside the image against `npm view <package> version`, and rebuilds with the
   agent's `BuildArg` pinned to the newer version.
 - `Options.FullPrompt()` appends fixed house rules to the user's prompt (no spec skills, no
-  git operations by the agent). The **commit message uses `Prompt`, not `FullPrompt`.**
+  git operations by the agent). When `--push` creates a commit, its message uses a nonempty
+  `CommitMessage`; otherwise it uses `Prompt`, never `FullPrompt`.
 
 ### Adding an agent
 

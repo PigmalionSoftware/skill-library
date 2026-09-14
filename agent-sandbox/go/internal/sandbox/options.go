@@ -11,12 +11,14 @@ import (
 
 // Options is one invocation of the sandbox.
 type Options struct {
-	Branch    string
-	Agent     agent.Agent
-	Model     string
-	BaseImage string
-	Push      bool
-	Prompt    string
+	Branch        string
+	AgentName     string
+	Agent         agent.Agent
+	Model         string
+	BaseImage     string
+	Push          bool
+	Prompt        string
+	CommitMessage string
 }
 
 // NewOptions turns the values the command line carried into one invocation,
@@ -24,37 +26,31 @@ type Options struct {
 // command line itself is parsed by the caller; what is left here is the part
 // that needs to know the agents, which is why an unusable name comes back as a
 // UsageError rather than as a plain failure.
-func NewOptions(branch, agentName, model, baseImage, prompt string, push bool) (Options, error) {
-	if agentName == "" {
+func NewOptions(opts Options) (Options, error) {
+	if opts.AgentName == "" {
 		return Options{}, usageErrorf("--agent is required (%s)", agent.NamesProse())
 	}
 
-	selected, err := agent.Lookup(agentName)
+	selected, err := agent.Lookup(opts.AgentName)
 	if err != nil {
 		return Options{}, UsageError{err}
 	}
 	// An empty model is not an omission to report: it means the agent resolves
 	// the model itself, and DefaultModel says so by returning an empty string.
-	if model == "" {
-		model = selected.DefaultModel()
+	if opts.Model == "" {
+		opts.Model = selected.DefaultModel()
 	}
+	opts.Agent = selected
 
-	if branch == "" {
+	if opts.Branch == "" {
 		randomBranch, err := generateBranchName()
 		if err != nil {
 			return Options{}, err
 		}
-		branch = randomBranch
+		opts.Branch = randomBranch
 	}
 
-	return Options{
-		Branch:    branch,
-		Agent:     selected,
-		Model:     model,
-		BaseImage: baseImage,
-		Push:      push,
-		Prompt:    prompt,
-	}, nil
+	return opts, nil
 }
 
 // AgentNames are the agent names the --agent flag accepts, in the order they

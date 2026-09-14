@@ -10,12 +10,13 @@ import (
 
 func newRootCmd() (*cobra.Command, *int) {
 	var (
-		status     int
-		branchName string
-		agentName  string
-		model      string
-		baseImage  string
-		push       bool
+		status        int
+		branchName    string
+		agentName     string
+		model         string
+		baseImage     string
+		push          bool
+		commitMessage string
 	)
 
 	cmd := &cobra.Command{
@@ -49,7 +50,15 @@ func newRootCmd() (*cobra.Command, *int) {
 			// the sentence it was before the shell took it apart, so that a
 			// prompt of more than one word need not be quoted. A prompt holding
 			// a word that starts with a dash does, or the flag parser claims it.
-			opts, err := sandbox.NewOptions(branchName, agentName, model, baseImage, strings.Join(args[0:], " "), push)
+			opts, err := sandbox.NewOptions(sandbox.Options{
+				Branch:        branchName,
+				AgentName:     agentName,
+				Model:         model,
+				BaseImage:     baseImage,
+				Push:          push,
+				Prompt:        strings.Join(args, " "),
+				CommitMessage: commitMessage,
+			})
 			if err != nil {
 				return err
 			}
@@ -64,6 +73,7 @@ func newRootCmd() (*cobra.Command, *int) {
 	cmd.Flags().StringVarP(&model, "model", "m", "", "model to use (default: the agent's own)")
 	cmd.Flags().StringVarP(&baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
 	cmd.Flags().BoolVarP(&push, "push", "p", false, "commit the agent's work and push the branch")
+	cmd.Flags().StringVarP(&commitMessage, "commit-message", "c", "", "commit message (default: prompt)")
 
 	// pflag reports a malformed flag through the error func of the command it
 	// was parsing, or of the nearest parent that has one, so this covers the

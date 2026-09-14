@@ -6,7 +6,10 @@ import (
 )
 
 func TestNewOptionsGeneratesBranchWhenOmitted(t *testing.T) {
-	opts, err := NewOptions("", "codex", "", "", "create a file", false)
+	opts, err := NewOptions(Options{
+		AgentName: "codex",
+		Prompt:    "create a file",
+	})
 	if err != nil {
 		t.Fatalf("NewOptions() error = %v", err)
 	}

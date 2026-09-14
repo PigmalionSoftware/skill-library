@@ -183,10 +183,12 @@ func publish(opts Options, worktreeDir string, repo *git.Repo, out io.Writer) er
 		fmt.Fprintf(out, "Nothing to commit in %s\n", worktreeDir)
 		return nil
 	}
+	commitMessage := opts.Prompt
+	if opts.CommitMessage != "" {
+		commitMessage = opts.CommitMessage
+	}
 
-	// The commit message is the user's own prompt, without the sandbox rules
-	// appended for the agent.
-	if err := worktree.Commit(opts.Prompt); err != nil {
+	if err := worktree.Commit(commitMessage); err != nil {
 		return err
 	}
 	return worktree.Push(opts.Branch)
