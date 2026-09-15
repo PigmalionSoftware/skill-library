@@ -10,6 +10,7 @@ import (
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/pkg/stdcopy"
 )
@@ -205,12 +206,13 @@ func containerConfig(image string, opts RunOptions) *container.Config {
 func hostConfig(opts RunOptions) *container.HostConfig {
 	config := &container.HostConfig{AutoRemove: true}
 
-	for _, mount := range opts.Mounts {
-		bind := mount.Host + ":" + mount.Container
-		if mount.ReadOnly {
-			bind += ":ro"
-		}
-		config.Binds = append(config.Binds, bind)
+	for _, bind := range opts.Mounts {
+		config.Mounts = append(config.Mounts, mount.Mount{
+			Type:     mount.TypeBind,
+			Source:   bind.Host,
+			Target:   bind.Container,
+			ReadOnly: bind.ReadOnly,
+		})
 	}
 	if len(opts.Tmpfs) > 0 {
 		config.Tmpfs = make(map[string]string, len(opts.Tmpfs))

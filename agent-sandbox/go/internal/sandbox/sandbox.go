@@ -191,14 +191,10 @@ func addImageMounts(runOpts *docker.RunOptions, opts Options) []string {
 }
 
 // imageAttachmentName preserves an ordinary extension for programs that use
-// one to identify a file format, while never letting punctuation in a host
-// filename become part of Docker's colon-delimited bind specification.
+// one to identify a file format. The generated base name keeps attachment
+// paths stable without exposing the host filename to the agent.
 func imageAttachmentName(index int, image string) string {
-	extension := filepath.Ext(image)
-	if extension != "" && strings.Trim(extension, ".abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") == "" {
-		return strconv.Itoa(index+1) + extension
-	}
-	return strconv.Itoa(index + 1)
+	return strconv.Itoa(index+1) + filepath.Ext(image)
 }
 
 // publish commits and pushes what the agent produced, unless --push was left
