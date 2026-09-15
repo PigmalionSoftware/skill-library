@@ -17,6 +17,7 @@ import (
 type Mount struct {
 	Host      string
 	Container string
+	ReadOnly  bool
 }
 
 // Tmpfs is an in-memory mount. Options is the raw tmpfs option string, such as

@@ -41,7 +41,7 @@ func (o opencode) Container(home string) (docker.RunOptions, error) {
 	}, nil
 }
 
-func (opencode) Args(model, prompt string) []string {
+func (opencode) Args(model, prompt string, _ []string) []string {
 	args := []string{"run", "--auto", "--variant", "high", "--print-logs"}
 	if model != "" {
 		args = append(args, "--model", model)

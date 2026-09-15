@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"agent-sandbox/internal/sandbox"
@@ -23,6 +24,24 @@ func TestRunArgsAcceptsFilePromptWithoutPositionalPrompt(t *testing.T) {
 
 	if err := runArgs(cmd, nil); err != nil {
 		t.Errorf("runArgs() error = %v, want nil", err)
+	}
+}
+
+func TestImageFlagIsRepeatableAndPromptCanFollowTerminator(t *testing.T) {
+	cmd, _ := newRootCmd()
+	if err := cmd.Flags().Parse([]string{"--image", "first.png", "--image", "second.png", "--", "describe", "them"}); err != nil {
+		t.Fatal(err)
+	}
+
+	images, err := cmd.Flags().GetStringArray("image")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"first.png", "second.png"}; !reflect.DeepEqual(images, want) {
+		t.Fatalf("--image values = %q, want %q", images, want)
+	}
+	if args := cmd.Flags().Args(); !reflect.DeepEqual(args, []string{"describe", "them"}) {
+		t.Fatalf("prompt args = %q, want [describe them]", args)
 	}
 }
 

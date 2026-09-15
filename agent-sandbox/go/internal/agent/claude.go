@@ -37,7 +37,7 @@ func (c claude) Container(home string) (docker.RunOptions, error) {
 	}, nil
 }
 
-func (claude) Args(model, prompt string) []string {
+func (claude) Args(model, prompt string, _ []string) []string {
 	args := []string{"--print", "--permission-mode", "bypassPermissions", "--effort", "high"}
 	if model != "" {
 		args = append(args, "--model", model)

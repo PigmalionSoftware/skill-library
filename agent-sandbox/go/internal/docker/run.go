@@ -206,7 +206,11 @@ func hostConfig(opts RunOptions) *container.HostConfig {
 	config := &container.HostConfig{AutoRemove: true}
 
 	for _, mount := range opts.Mounts {
-		config.Binds = append(config.Binds, mount.Host+":"+mount.Container)
+		bind := mount.Host + ":" + mount.Container
+		if mount.ReadOnly {
+			bind += ":ro"
+		}
+		config.Binds = append(config.Binds, bind)
 	}
 	if len(opts.Tmpfs) > 0 {
 		config.Tmpfs = make(map[string]string, len(opts.Tmpfs))

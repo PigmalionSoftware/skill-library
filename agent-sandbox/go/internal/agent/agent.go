@@ -27,9 +27,11 @@ type Agent interface {
 	// configuration is missing from the host home directory. The caller fills in
 	// the entrypoint, the arguments, the user and the workspace mount.
 	Container(home string) (docker.RunOptions, error)
-	// Args is the agent's command line inside the container. An empty model means
-	// the flag is left out so the agent picks its own.
-	Args(model, prompt string) []string
+	// Args is the agent's command line inside the container. images are absolute
+	// paths inside the container; agents that do not support initial image
+	// attachments ignore them. An empty model means the flag is left out so the
+	// agent picks its own.
+	Args(model, prompt string, images []string) []string
 }
 
 // registry keeps the agents in the order they are offered on the command line.

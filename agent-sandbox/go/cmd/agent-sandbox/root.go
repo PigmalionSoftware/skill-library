@@ -19,6 +19,7 @@ func newRootCmd() (*cobra.Command, *int) {
 		push          bool
 		commitMessage string
 		filePrompt    string
+		images        []string
 	)
 
 	cmd := &cobra.Command{
@@ -64,6 +65,7 @@ func newRootCmd() (*cobra.Command, *int) {
 				Prompt:        strings.Join(args, " "),
 				CommitMessage: commitMessage,
 				FilePrompt:    filePrompt,
+				Images:        images,
 			})
 			if err != nil {
 				return err
@@ -81,6 +83,7 @@ func newRootCmd() (*cobra.Command, *int) {
 	cmd.Flags().BoolVarP(&push, "push", "p", false, "commit the agent's work and push the branch")
 	cmd.Flags().StringVarP(&commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
 	cmd.Flags().StringVarP(&filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
+	cmd.Flags().StringArrayVar(&images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
 
 	// pflag reports a malformed flag through the error func of the command it
 	// was parsing, or of the nearest parent that has one, so this covers the

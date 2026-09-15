@@ -16,6 +16,7 @@ RUN npm install --global "opencode-ai@${OPENCODE_VERSION}"
 ARG PI_VERSION=latest
 RUN npm install --global --ignore-scripts "@earendil-works/pi-coding-agent@${PI_VERSION}"
 
+RUN mkdir -p /agent-sandbox-images
 
 WORKDIR /workspace
 CMD ["bash"]

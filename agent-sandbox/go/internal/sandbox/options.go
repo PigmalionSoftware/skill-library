@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -21,6 +23,7 @@ type Options struct {
 	Prompt        string
 	CommitMessage string
 	FilePrompt    string
+	Images        []string
 }
 
 // NewOptions turns the values the command line carried into one invocation,
@@ -44,6 +47,17 @@ func NewOptions(opts Options) (Options, error) {
 	}
 	opts.Agent = selected
 
+	// Codex is the only installed agent whose non-interactive CLI has a verified
+	// image-attachment interface. The other agents accept the flag for command
+	// line compatibility but otherwise keep their established invocation.
+	if opts.Agent.Name() == "codex" {
+		images, err := resolveImagePaths(opts.Images)
+		if err != nil {
+			return Options{}, err
+		}
+		opts.Images = images
+	}
+
 	if opts.Branch == "" {
 		randomBranch, err := generateBranchName()
 		if err != nil {
@@ -61,6 +75,27 @@ func NewOptions(opts Options) (Options, error) {
 	}
 
 	return opts, nil
+}
+
+// resolveImagePaths turns the paths the shell supplied into absolute Docker
+// bind-mount sources. A Docker daemon cannot reliably interpret a relative
+// client-side path, and rejecting unusable files before worktree creation
+// avoids leaving an otherwise successful sandbox run without its attachments.
+func resolveImagePaths(images []string) ([]string, error) {
+	resolved := make([]string, 0, len(images))
+	for _, image := range images {
+		path, err := filepath.Abs(image)
+		if err != nil {
+			return nil, usageErrorf("resolving --image %q: %v", image, err)
+		}
+
+		info, err := os.Stat(path)
+		if err != nil || !info.Mode().IsRegular() {
+			return nil, usageErrorf("--image %q must be an existing regular file", image)
+		}
+		resolved = append(resolved, path)
+	}
+	return resolved, nil
 }
 
 // AgentNames are the agent names the --agent flag accepts, in the order they

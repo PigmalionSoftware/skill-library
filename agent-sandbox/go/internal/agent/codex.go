@@ -30,10 +30,19 @@ func (c codex) Container(home string) (docker.RunOptions, error) {
 	}, nil
 }
 
-func (codex) Args(model, prompt string) []string {
+func (codex) Args(model, prompt string, images []string) []string {
 	args := []string{"--dangerously-bypass-approvals-and-sandbox"}
 	if model != "" {
 		args = append(args, "--model", model)
 	}
-	return append(args, "--config", `model_reasoning_effort="high"`, "exec", prompt)
+	args = append(args, "--config", `model_reasoning_effort="high"`, "exec")
+	for _, image := range images {
+		args = append(args, "-i", image)
+	}
+	// Codex accepts one or more values after -i. The option terminator keeps the
+	// text prompt from being consumed as another attachment.
+	if len(images) > 0 {
+		args = append(args, "--")
+	}
+	return append(args, prompt)
 }

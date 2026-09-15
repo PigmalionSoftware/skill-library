@@ -25,6 +25,10 @@ const imageName = "agent-sandbox"
 // workspace is where the worktree is mounted, matching the image's WORKDIR.
 const workspace = "/workspace"
 
+// imageAttachmentDir is separate from the worktree so a prompt attachment is
+// never mistaken for a repository file or accidentally included in a commit.
+const imageAttachmentDir = "/agent-sandbox-images"
+
 // External images run as the invoking host UID/GID, which need not have an
 // entry or a writable home in the image's passwd database. Keeping these paths
 // under /tmp gives Codex and language tools a disposable writable home without
@@ -141,7 +145,8 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 	}
 
 	runOpts.Entrypoint = opts.Agent.Binary()
-	runOpts.Args = opts.Agent.Args(opts.Model, opts.FullPrompt())
+	imagePaths := addImageMounts(&runOpts, opts)
+	runOpts.Args = opts.Agent.Args(opts.Model, opts.FullPrompt(), imagePaths)
 	runOpts.User = strconv.Itoa(os.Getuid()) + ":" + strconv.Itoa(os.Getgid())
 	runOpts.Mounts = append(runOpts.Mounts, docker.Mount{Host: worktreeDir, Container: workspace})
 	if opts.BaseImage != "" {
@@ -164,6 +169,36 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 	}
 
 	return runOpts, nil
+}
+
+// addImageMounts exposes Codex attachments at stable, generated paths. It
+// never forwards host filenames into the container command, and read-only
+// binds keep the agent from modifying data outside its disposable worktree.
+func addImageMounts(runOpts *docker.RunOptions, opts Options) []string {
+	if opts.Agent.Name() != "codex" {
+		return nil
+	}
+
+	paths := make([]string, 0, len(opts.Images))
+	for index, image := range opts.Images {
+		path := filepath.Join(imageAttachmentDir, imageAttachmentName(index, image))
+		runOpts.Mounts = append(runOpts.Mounts, docker.Mount{
+			Host: image, Container: path, ReadOnly: true,
+		})
+		paths = append(paths, path)
+	}
+	return paths
+}
+
+// imageAttachmentName preserves an ordinary extension for programs that use
+// one to identify a file format, while never letting punctuation in a host
+// filename become part of Docker's colon-delimited bind specification.
+func imageAttachmentName(index int, image string) string {
+	extension := filepath.Ext(image)
+	if extension != "" && strings.Trim(extension, ".abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") == "" {
+		return strconv.Itoa(index+1) + extension
+	}
+	return strconv.Itoa(index + 1)
 }
 
 // publish commits and pushes what the agent produced, unless --push was left
