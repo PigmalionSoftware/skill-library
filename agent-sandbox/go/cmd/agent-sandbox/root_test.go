@@ -60,6 +60,13 @@ func TestRunArgsRejectsMissingPromptSource(t *testing.T) {
 	assertUsageError(t, runArgs(cmd, nil))
 }
 
+func TestResumeRequiresBranch(t *testing.T) {
+	cmd, _ := newRootCmd()
+	cmd.SetArgs([]string{"resume", "-a", "codex", "continue"})
+
+	assertUsageError(t, cmd.Execute())
+}
+
 func assertUsageError(t *testing.T, err error) {
 	t.Helper()
 	var usageErr sandbox.UsageError

@@ -117,6 +117,73 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	return status, nil
 }
 
+// Resume runs an agent in an existing sandbox worktree. It deliberately does
+// not share Run's creation path: a recorded worktree is the authorization to
+// reuse a directory, while a missing or stale record must never turn into a
+// fresh worktree that only happens to have the same branch name.
+func Resume(ctx context.Context, opts Options, out io.Writer) (int, error) {
+	found, worktree, err := resumableWorktree(opts.Branch)
+	if err != nil {
+		return 0, err
+	}
+
+	client, err := imageClient(opts)
+	if err != nil {
+		return 0, err
+	}
+	defer client.Close()
+
+	if err := ensureImage(ctx, client, opts, out); err != nil {
+		return 0, err
+	}
+
+	runOpts, err := containerOptions(opts, worktree.Path)
+	if err != nil {
+		return 0, err
+	}
+	lock, err := lockWorktree(worktree)
+	if err != nil {
+		return 0, err
+	}
+	defer lock.Close()
+
+	status, err := client.Run(ctx, runOpts)
+	if err != nil {
+		return 0, err
+	}
+	if err := publish(opts, worktree.Path, found.repo, out); err != nil {
+		return 0, err
+	}
+	return status, nil
+}
+
+// resumableWorktree resolves a recorded target before any image work. The
+// state file is the sandbox's source of truth, so the name the user sees in
+// worktree-list is enough to recover the worktree path and branch to reuse.
+func resumableWorktree(branch string) (repoWorktrees, worktreeRecord, error) {
+	found, err := sandboxWorktrees()
+	if err != nil {
+		return repoWorktrees{}, worktreeRecord{}, err
+	}
+
+	worktree, ok := findWorktree(found.worktrees, branch)
+	if !ok {
+		return repoWorktrees{}, worktreeRecord{}, fmt.Errorf("no sandbox worktree on branch %s; run worktree-list to see the ones there are", branch)
+	}
+
+	if _, err := os.Stat(worktree.Path); err != nil {
+		if os.IsNotExist(err) {
+			return repoWorktrees{}, worktreeRecord{}, staleWorktreeError(worktree)
+		}
+		return repoWorktrees{}, worktreeRecord{}, err
+	}
+	return found, worktree, nil
+}
+
+func staleWorktreeError(worktree worktreeRecord) error {
+	return fmt.Errorf("sandbox worktree %s at %s is stale; run worktree-delete -b %s to remove its record", worktree.Branch, worktree.Path, worktree.Branch)
+}
+
 // undoWorktree removes a worktree the run has just created, for the failure
 // that happens between creating it and being able to use it. The branch goes
 // only if this run is what created it.

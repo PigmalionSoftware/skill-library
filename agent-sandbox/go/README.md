@@ -71,6 +71,10 @@ No se pueden usar juntas. Si se usa `--push` sin `--commit-message`, el contenid
 del archivo se convierte en el mensaje de commit por defecto cuando se eligió
 `--file-prompt`.
 
+Para continuar un worktree registrado  `agent-sandbox resume -b <branch>`.
+El branch es el nombre mostrado por `worktree-list`. 
+registro. Si se combina con `--push`, se commitean todos los cambios pendientes.
+
 ### Imagen base externa
 
 `--base-image` usa una imagen que ya trae el runtime del proyecto. Se admiten
@@ -124,6 +128,12 @@ Ejecutar Claude Code y publicar el branch al terminar:
 
 ```bash
 agent-sandbox -b add-test -a claude -m sonnet -p "add a regression test for the login redirect"
+```
+
+Continuar un worktree registrado por su nombre:
+
+```bash
+agent-sandbox resume -b fix-login -a codex "add a regression test for the login redirect"
 ```
 
 Dejar que opencode resuelva su modelo configurado:

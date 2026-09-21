@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	root, status := newRootCmd()
+	root, state := newRootCmd()
 
 	// An interrupt cancels the context, which stops the container and waits for
 	// it: the agent holds the worktree open, so it must not outlive this
@@ -41,7 +41,7 @@ func main() {
 		fail(cmd, err)
 	}
 
-	os.Exit(*status)
+	os.Exit(state.status)
 }
 
 func fail(cmd *cobra.Command, err error) {

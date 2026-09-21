@@ -9,18 +9,19 @@ import (
 	"agent-sandbox/internal/sandbox"
 )
 
-func newRootCmd() (*cobra.Command, *int) {
+// commandState carries the agent's exit status out of Cobra's deferred RunE
+// callbacks. Both the root run and resume command update the same named state,
+// which main reads only after ExecuteContextC returns.
+type commandState struct {
+	status int
+}
+
+func newRootCmd() (*cobra.Command, *commandState) {
 	var (
-		status        int
-		branchName    string
-		agentName     string
-		model         string
-		baseImage     string
-		push          bool
-		commitMessage string
-		filePrompt    string
-		images        []string
+		branchName string
+		flags      runFlags
 	)
+	state := &commandState{}
 
 	cmd := &cobra.Command{
 		Use:   "agent-sandbox [-b <branch-name>] -a <agent> [flags] (<prompt...> | -f <prompt-file>)",
@@ -52,38 +53,22 @@ func newRootCmd() (*cobra.Command, *int) {
 		Version: buildVersion(),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Everything after the branch name is the prompt, joined back into
-			// the sentence it was before the shell took it apart, so that a
+			// The positional arguments are joined back into the sentence they were
+			// before the shell took them apart, so that a
 			// prompt of more than one word need not be quoted. A prompt holding
 			// a word that starts with a dash does, or the flag parser claims it.
-			opts, err := sandbox.NewOptions(sandbox.Options{
-				Branch:        branchName,
-				AgentName:     agentName,
-				Model:         model,
-				BaseImage:     baseImage,
-				Push:          push,
-				Prompt:        strings.Join(args, " "),
-				CommitMessage: commitMessage,
-				FilePrompt:    filePrompt,
-				Images:        images,
-			})
+			opts, err := flags.options(branchName, args)
 			if err != nil {
 				return err
 			}
 
-			status, err = sandbox.Run(cmd.Context(), opts, cmd.OutOrStdout())
+			state.status, err = sandbox.Run(cmd.Context(), opts, cmd.OutOrStdout())
 			return err
 		},
 	}
 
-	cmd.Flags().StringVarP(&agentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
 	cmd.Flags().StringVarP(&branchName, "branch", "b", "", "worktree branch name (default: generated)")
-	cmd.Flags().StringVarP(&model, "model", "m", "", "model to use (default: the agent's own)")
-	cmd.Flags().StringVarP(&baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
-	cmd.Flags().BoolVarP(&push, "push", "p", false, "commit the agent's work and push the branch")
-	cmd.Flags().StringVarP(&commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
-	cmd.Flags().StringVarP(&filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
-	cmd.Flags().StringArrayVar(&images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
+	flags.bind(cmd)
 
 	// pflag reports a malformed flag through the error func of the command it
 	// was parsing, or of the nearest parent that has one, so this covers the
@@ -92,12 +77,55 @@ func newRootCmd() (*cobra.Command, *int) {
 		return sandbox.NewUsageError(err)
 	})
 
+	cmd.AddCommand(newResumeCmd(state), newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd(), newWorktreeEditorOpenCmd())
+	return cmd, state
+}
+
+// runFlags is the execution configuration shared by a fresh run and a resume.
+// Their only different input is the meaning of the branch: the root command
+// creates it when necessary, while resume finds it in the sandbox state file.
+type runFlags struct {
+	agentName     string
+	model         string
+	baseImage     string
+	push          bool
+	commitMessage string
+	filePrompt    string
+	images        []string
+}
+
+// bind gives both commands the same agent execution flags and completions, so
+// a new run and a resumed run cannot silently grow different container or
+// publish behavior.
+func (f *runFlags) bind(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&f.agentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
+	cmd.Flags().StringVarP(&f.model, "model", "m", "", "model to use (default: the agent's own)")
+	cmd.Flags().StringVarP(&f.baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
+	cmd.Flags().BoolVarP(&f.push, "push", "p", false, "commit the agent's work and push the branch")
+	cmd.Flags().StringVarP(&f.commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
+	cmd.Flags().StringVarP(&f.filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
+	cmd.Flags().StringArrayVar(&f.images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
+
 	completeFlag(cmd, "agent", func(string) ([]string, error) {
 		return sandbox.AgentNames(), nil
 	})
+}
 
-	cmd.AddCommand(newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd(), newWorktreeEditorOpenCmd())
-	return cmd, &status
+// options is the one translation from the shared CLI fields to the sandbox
+// configuration. NewOptions continues to own agent lookup, model defaults,
+// image validation, generated branches, and file-prompt resolution.
+func (f runFlags) options(branch string, prompt []string) (sandbox.Options, error) {
+	return sandbox.NewOptions(sandbox.Options{
+		Branch:        branch,
+		AgentName:     f.agentName,
+		Model:         f.model,
+		BaseImage:     f.baseImage,
+		Push:          f.push,
+		Prompt:        strings.Join(prompt, " "),
+		CommitMessage: f.commitMessage,
+		FilePrompt:    f.filePrompt,
+		Images:        f.images,
+	})
 }
 
 // runArgs requires exactly one prompt source. A file prompt removes shell

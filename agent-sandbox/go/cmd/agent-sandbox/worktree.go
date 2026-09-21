@@ -8,6 +8,47 @@ import (
 	"agent-sandbox/internal/sandbox"
 )
 
+// newResumeCmd runs another agent session in a sandbox worktree named by its
+// branch. The root command keeps creating worktrees, so reuse remains an
+// explicit operation and cannot happen by accident on a normal run.
+func newResumeCmd(state *commandState) *cobra.Command {
+	var (
+		branchName string
+		flags      runFlags
+	)
+
+	cmd := &cobra.Command{
+		Use:   "resume -b <branch-name> -a <agent> [flags] (<prompt...> | -f <prompt-file>)",
+		Short: "Run a coding agent again in a sandbox worktree",
+		Long: "Run a coding agent in a sandbox worktree recorded for this repository.\n" +
+			"The branch name is shown by worktree-list; its committed and uncommitted\n" +
+			"work stays in place for the new session.",
+		Example: "  agent-sandbox resume -b fix-login -a codex \"add a regression test\"\n" +
+			"  agent-sandbox resume -b fix-login -a claude --push -f next-task.md",
+		Args: runArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if branchName == "" {
+				return sandbox.NewUsageError(errors.New("-b <branch-name> is required"))
+			}
+			opts, err := flags.options(branchName, args)
+			if err != nil {
+				return err
+			}
+
+			state.status, err = sandbox.Resume(cmd.Context(), opts, cmd.OutOrStdout())
+			return err
+		},
+	}
+
+	cmd.Flags().StringVarP(&branchName, "branch", "b", "", "recorded worktree branch name to resume")
+	flags.bind(cmd)
+
+	completeFlag(cmd, "branch", func(string) ([]string, error) {
+		return sandbox.WorktreeBranches()
+	})
+	return cmd
+}
+
 // newWorktreeListCmd is the verb that shows what the sandbox has left behind:
 // the worktrees it added to this repository, one per line.
 func newWorktreeListCmd() *cobra.Command {
