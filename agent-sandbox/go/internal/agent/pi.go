@@ -20,6 +20,7 @@ func (pi) Binary() string       { return "pi" }
 func (pi) Package() string      { return "@earendil-works/pi-coding-agent" }
 func (pi) BuildArg() string     { return "PI_VERSION" }
 func (pi) DefaultModel() string { return "" }
+func (pi) SupportsImages() bool { return false }
 
 func (p pi) Container(home string) (docker.RunOptions, error) {
 	agentDir := filepath.Join(home, ".pi", "agent")

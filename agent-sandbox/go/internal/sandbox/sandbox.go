@@ -238,11 +238,12 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 	return runOpts, nil
 }
 
-// addImageMounts exposes Codex attachments at stable, generated paths. It
-// never forwards host filenames into the container command, and read-only
-// binds keep the agent from modifying data outside its disposable worktree.
+// addImageMounts exposes supported-agent attachments at stable, generated
+// paths. It never forwards host filenames into the container command, and
+// read-only binds keep the agent from modifying data outside its disposable
+// worktree.
 func addImageMounts(runOpts *docker.RunOptions, opts Options) []string {
-	if opts.Agent.Name() != "codex" {
+	if !opts.Agent.SupportsImages() {
 		return nil
 	}
 

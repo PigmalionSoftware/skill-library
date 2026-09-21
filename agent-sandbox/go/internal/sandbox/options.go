@@ -47,10 +47,7 @@ func NewOptions(opts Options) (Options, error) {
 	}
 	opts.Agent = selected
 
-	// Codex is the only installed agent whose non-interactive CLI has a verified
-	// image-attachment interface. The other agents accept the flag for command
-	// line compatibility but otherwise keep their established invocation.
-	if opts.Agent.Name() == "codex" {
+	if opts.Agent.SupportsImages() {
 		images, err := resolveImagePaths(opts.Images)
 		if err != nil {
 			return Options{}, err

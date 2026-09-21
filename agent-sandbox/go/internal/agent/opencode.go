@@ -16,6 +16,7 @@ func (opencode) Binary() string       { return "opencode" }
 func (opencode) Package() string      { return "opencode-ai" }
 func (opencode) BuildArg() string     { return "OPENCODE_VERSION" }
 func (opencode) DefaultModel() string { return "" }
+func (opencode) SupportsImages() bool { return false }
 
 func (o opencode) Container(home string) (docker.RunOptions, error) {
 	config := filepath.Join(home, ".config", "opencode")

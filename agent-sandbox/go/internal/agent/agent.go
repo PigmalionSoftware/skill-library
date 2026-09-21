@@ -23,6 +23,10 @@ type Agent interface {
 	// DefaultModel is used when --model is omitted. An empty string means the
 	// agent resolves the model on its own.
 	DefaultModel() string
+	// SupportsImages reports whether the agent can accept image files as part of
+	// its initial prompt. The sandbox uses it to validate and mount attachments
+	// only for agents that can consume them.
+	SupportsImages() bool
 	// Container returns the docker options the agent needs, or an error when its
 	// configuration is missing from the host home directory. The caller fills in
 	// the entrypoint, the arguments, the user and the workspace mount.

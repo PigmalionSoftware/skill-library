@@ -7,8 +7,9 @@
 #
 # Needs Docker and an authenticated claude. Point XDG_CONFIG_HOME at a scratch
 # directory to keep the real ~/.config/agent-sandbox out of it.
-# TEST_EDITOR=1 opens VS Code for the resumed worktree. TEST_CODEX_IMAGES=1
-# needs authenticated Codex and verifies actual --image attachment handling.
+# TEST_EDITOR=1 opens VS Code for the resumed worktree. TEST_CLAUDE_IMAGES=1
+# or TEST_CODEX_IMAGES=1 needs the corresponding authenticated agent and
+# verifies actual --image attachment handling.
 #
 # Usage: ./test-worktree.sh
 
@@ -23,6 +24,13 @@ model="${MODEL:-opus}"
 base_image="${BASE_IMAGE:-golang:1.26-alpine}"
 prompt_file="$(mktemp)"
 image_file="$(mktemp --suffix=.png)"
+
+# A real 1x1 PNG exercises the agent's visual attachment path. An empty file
+# would only prove that Docker mounted something, not that Claude or Codex can
+# decode an image.
+base64 --decode >"$image_file" <<'PNG'
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Jx60AAAAASUVORK5CYII=
+PNG
 
 cleanup() {
   rm -f -- "$prompt_file" "$image_file"
@@ -87,8 +95,18 @@ else
   printf '\n[skipping worktree-editor; set TEST_EDITOR=1 to launch VS Code]\n'
 fi
 
-# Codex alone validates and mounts --image attachments. The test is opt-in so
-# the normal Claude lifecycle needs only its existing host authentication.
+# Claude receives mounted images as visual paths in its initial prompt. This is
+# opt-in because the normal worktree lifecycle needs only existing Claude auth.
+if [[ "${TEST_CLAUDE_IMAGES:-0}" == "1" ]]; then
+  run -b tmp-claude-image-test -a claude -m opus -i golang:1.26-alpine \
+    --image "$image_file" -- \
+    "inspect the attached image as visual input, then create claude-image-flag.txt at the repository root containing image flag works"
+else
+  printf '\n[skipping Claude --image test; set TEST_CLAUDE_IMAGES=1]\n'
+fi
+
+# Codex uses its native image arguments. It stays opt-in because it needs its
+# own host authentication in addition to the default Claude lifecycle.
 if [[ "${TEST_CODEX_IMAGES:-0}" == "1" ]]; then
   run -b tmp-image-test -a codex --image "$image_file" -- \
     "create image-flag.txt at the repository root containing image flag works"

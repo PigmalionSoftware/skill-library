@@ -14,6 +14,7 @@ func (codex) Binary() string       { return "codex" }
 func (codex) Package() string      { return "@openai/codex" }
 func (codex) BuildArg() string     { return "CODEX_VERSION" }
 func (codex) DefaultModel() string { return "gpt-5.6-terra" }
+func (codex) SupportsImages() bool { return true }
 
 func (c codex) Container(home string) (docker.RunOptions, error) {
 	codexHome := filepath.Join(home, ".codex")

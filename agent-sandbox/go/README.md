@@ -61,7 +61,7 @@ agent-sandbox [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <ima
 | `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit y hace `git push --set-upstream origin <branch>`. |
 | `-c`, `--commit-message` | Opcional. Mensaje del commit creado por `-p` o `--push`; si se omite, usa el prompt resuelto. Sin `-p` o `--push`, no tiene efecto. |
 | `-f`, `--file-prompt` | Archivo cuyo contenido se usa como instrucción para el agente, en lugar de `<prompt...>`. |
-| `--image <archivo>` | Opcional y repetible. Adjunta una imagen al prompt inicial de Codex. Cada ruta debe ser un archivo regular existente en el host; los demás agentes la ignoran. Usá `--` antes del prompt de texto para que Codex no lo interprete como otra imagen. |
+| `--image <archivo>` | Opcional y repetible. Adjunta imágenes al prompt inicial de Codex o Claude Code. Cada ruta debe ser un archivo regular existente en el host; opencode y pi la ignoran. Usá `--` antes del prompt de texto para que Codex no lo interprete como otra imagen. |
 | `<prompt...>` | Instrucción para el agente, en lugar de `-f` o `--file-prompt`. Usá comillas para conservarla como una sola cadena. |
 
 Sin `-p` o `--push`, los cambios quedan sin commitear en el worktree. Con `-p`
@@ -153,9 +153,9 @@ Obtener prompt de archivo
 agent-sandbox -b prompt-file-test -a codex -f prompt.md
 ```
 
-Adjuntar una o más imágenes al prompt inicial de Codex
+Adjuntar una o más imágenes al prompt inicial de Codex o Claude Code
 ```bash
-agent-sandbox -a codex \
+agent-sandbox -a claude \
   --image "/home/user/Pictures/mockup.png" \
   --image "/home/user/Pictures/reference.png" \
   -- "compare these screenshots and implement the resulting UI"
