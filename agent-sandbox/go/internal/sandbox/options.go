@@ -17,6 +17,7 @@ type Options struct {
 	Branch        string
 	AgentName     string
 	Agent         agent.Agent
+	APIKey        string
 	Model         string
 	BaseImage     string
 	Push          bool
@@ -46,6 +47,11 @@ func NewOptions(opts Options) (Options, error) {
 		opts.Model = selected.DefaultModel()
 	}
 	opts.Agent = selected
+	if opts.APIKey != "" {
+		if _, ok := selected.(agent.APIKeyAgent); !ok {
+			return Options{}, usageErrorf("api-key is not supported for agent %s", selected.Name())
+		}
+	}
 
 	if opts.Agent.SupportsImages() {
 		images, err := resolveImagePaths(opts.Images)

@@ -46,6 +46,8 @@ func applyLocalConfig(cmd *cobra.Command, name string, branch *string, flags *ru
 			*branch = value.(string)
 		case "agent":
 			flags.agentName = value.(string)
+		case "api-key":
+			flags.apiKey = value.(string)
 		case "model":
 			flags.model = value.(string)
 		case "base-image":
@@ -121,7 +123,7 @@ func readLocalConfig() (map[string]map[string]any, error) {
 func validateConfigField(section, key string, value any) error {
 	fieldName := section + "." + key
 	switch key {
-	case "branch", "agent", "model", "base-image", "query", "commit-message", "file-prompt":
+	case "branch", "agent", "model", "base-image", "query", "commit-message", "file-prompt", "api-key":
 		if _, ok := value.(string); !ok {
 			return fmt.Errorf("%s: %s must be a JSON string", localConfigFile, fieldName)
 		}

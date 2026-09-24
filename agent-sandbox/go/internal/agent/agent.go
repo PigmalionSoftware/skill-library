@@ -38,6 +38,13 @@ type Agent interface {
 	Args(model, prompt string, images []string) []string
 }
 
+// APIKeyAgent is implemented by agents that can use a key for one container
+// run without relying on or changing credentials stored on the host.
+type APIKeyAgent interface {
+	APIKeyContainer(key string) docker.RunOptions
+	APIKeyArgs(model, prompt string, images []string) []string
+}
+
 // registry keeps the agents in the order they are offered on the command line.
 var registry = []Agent{codex{}, claude{}, opencode{}, pi{}}
 

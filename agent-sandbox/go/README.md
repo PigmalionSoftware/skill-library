@@ -28,19 +28,21 @@ go build -o agent-sandbox ./cmd/agent-sandbox
 - Docker en ejecución.
 - Git y un repositorio Git: ejecutá el comando desde cualquier directorio
   dentro del repositorio.
-- Una sesión ya autenticada del agente elegido en el host. El contenedor recibe
-  esa configuración mediante montajes; no recibe credenciales como variables
-  de entorno.
+- Una sesión ya autenticada del agente elegido en el host o, para Codex y
+  Claude Code, una clave API en `./agent-sandbox.json`. opencode y pi requieren
+  la sesión del host.
 
-| Agente | Configuración requerida en el host |
+| Agente | Configuración del host cuando no se usa `api-key` |
 | --- | --- |
 | Codex | `~/.codex/` |
 | Claude Code | `~/.claude/` y `~/.claude.json` |
 | opencode | `~/.config/opencode/`, `~/.local/share/opencode/` y `~/.local/state/opencode/` |
 | pi | `~/.pi/agent/` |
 
-Si falta una de esas rutas, el comando falla sin crearla. Ejecutá y autenticá
-primero el agente correspondiente en el host.
+Sin `api-key`, si falta una de esas rutas, el comando falla sin crearla.
+Ejecutá y autenticá primero el agente correspondiente en el host. Con una
+clave API para Codex o Claude Code, el contenedor usa un directorio de inicio
+temporal y no monta las credenciales del host.
 
 En cada ejecución, `agent-sandbox` comprueba la versión del agente seleccionado
 dentro de la imagen contra npm. Construye la imagen si no existe y la reconstruye
@@ -79,10 +81,11 @@ El branch es el nombre mostrado por `worktree-list`. Si se combina con
 `--push`, se commitean todos los cambios pendientes.
 
 `run` y `resume` leen `./agent-sandbox.json` si existe en el directorio desde
-el que se ejecutan. Cada sección admite los nombres largos de las opciones:
+el que se ejecutan. Cada sección admite los nombres largos de las opciones
 `branch`, `agent`, `model`, `base-image`, `query`, `push`, `commit-message`,
-`file-prompt` e `image`. Las opciones explícitas de la línea de comandos
-prevalecen sobre el JSON.
+`file-prompt` e `image`, además del campo `api-key`. `api-key` solo existe en
+el JSON: no hay una opción de línea de comandos equivalente. Las opciones
+explícitas de la línea de comandos prevalecen sobre los demás valores del JSON.
 
 ```json
 {
@@ -103,6 +106,33 @@ prevalecen sobre el JSON.
 Con este archivo, `agent-sandbox run` usa la sección `run`; `resume` usa la
 sección `resume`. También podés pasar `-q "otra tarea"` para reemplazar la
 consulta del JSON. Los comandos de gestión de worktrees no leen el archivo.
+
+### Claves API para Codex y Claude Code
+
+Para usar una clave API en lugar de la sesión del host, agregá `api-key` a la
+sección `run` o `resume` que vayas a ejecutar. Por ejemplo, para Codex:
+
+```json
+{
+  "run": {
+    "agent": "codex",
+    "api-key": "<CLAVE_API_DE_OPENAI>",
+    "query": "inspect this repository"
+  }
+}
+```
+
+Para Claude Code:
+
+```json
+{
+  "run": {
+    "agent": "claude",
+    "api-key": "<CLAVE_API_DE_ANTHROPIC>",
+    "query": "inspect this repository"
+  }
+}
+```
 
 ### Imagen base externa
 

@@ -206,14 +206,27 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 		return docker.RunOptions{}, err
 	}
 
-	runOpts, err := opts.Agent.Container(home)
-	if err != nil {
-		return docker.RunOptions{}, err
+	var runOpts docker.RunOptions
+	if opts.APIKey != "" {
+		keyed, ok := opts.Agent.(agent.APIKeyAgent)
+		if !ok {
+			return docker.RunOptions{}, usageErrorf("api-key is not supported for agent %s", opts.Agent.Name())
+		}
+		runOpts = keyed.APIKeyContainer(opts.APIKey)
+	} else {
+		runOpts, err = opts.Agent.Container(home)
+		if err != nil {
+			return docker.RunOptions{}, err
+		}
 	}
 
 	runOpts.Entrypoint = opts.Agent.Binary()
 	imagePaths := addImageMounts(&runOpts, opts)
-	runOpts.Args = opts.Agent.Args(opts.Model, opts.FullPrompt(), imagePaths)
+	if opts.APIKey != "" {
+		runOpts.Args = opts.Agent.(agent.APIKeyAgent).APIKeyArgs(opts.Model, opts.FullPrompt(), imagePaths)
+	} else {
+		runOpts.Args = opts.Agent.Args(opts.Model, opts.FullPrompt(), imagePaths)
+	}
 	runOpts.User = strconv.Itoa(os.Getuid()) + ":" + strconv.Itoa(os.Getgid())
 	runOpts.Mounts = append(runOpts.Mounts, docker.Mount{Host: worktreeDir, Container: workspace})
 	if opts.BaseImage != "" {
@@ -227,7 +240,7 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 			// so the generated image installs Bash and every agent gets its path.
 			"SHELL=/bin/bash",
 		)
-		if opts.Agent.Name() == "codex" {
+		if opts.Agent.Name() == "codex" && opts.APIKey == "" {
 			// Codex uses CODEX_HOME for its mounted configuration and otherwise
 			// needs a normal writable home. Claude, opencode and pi each set HOME
 			// themselves, so overriding it here would hide their configuration.

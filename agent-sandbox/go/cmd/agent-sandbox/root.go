@@ -26,8 +26,7 @@ func newRootCmd() (*cobra.Command, *commandState) {
 			"its own, so it never touches the current working copy. Use run to create\n" +
 			"a worktree or resume to continue one already recorded.\n\n" +
 			"Authentication comes from the agent's configuration directory on the host,\n" +
-			"which is mounted into the container; no credentials are passed as environment\n" +
-			"variables, so the agent must already be authenticated on the host.",
+			"or from api-key in agent-sandbox.json for Codex or Claude.",
 		Example: "  agent-sandbox run -a codex -q \"fix the login redirect loop\"\n" +
 			"  agent-sandbox resume -b fix-login -a codex -q \"add a regression test\"",
 
@@ -98,6 +97,7 @@ func newRunCmd(state *commandState) *cobra.Command {
 // creates it when necessary, while resume finds it in the sandbox state file.
 type runFlags struct {
 	agentName     string
+	apiKey        string
 	model         string
 	baseImage     string
 	query         string
@@ -132,6 +132,7 @@ func (f runFlags) options(branch string) (sandbox.Options, error) {
 	return sandbox.NewOptions(sandbox.Options{
 		Branch:        branch,
 		AgentName:     f.agentName,
+		APIKey:        f.apiKey,
 		Model:         f.model,
 		BaseImage:     f.baseImage,
 		Push:          f.push,

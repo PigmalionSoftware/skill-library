@@ -124,3 +124,38 @@ func TestRunAndResumeQuerySources(t *testing.T) {
 		})
 	}
 }
+
+func TestRunAndResumeAPIKeysStayInTheirSections(t *testing.T) {
+	for _, tc := range []struct {
+		section string
+		wantKey string
+	}{
+		{section: "run", wantKey: "run-key"},
+		{section: "resume", wantKey: "resume-key"},
+	} {
+		t.Run(tc.section, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			config := `{"run":{"agent":"codex","query":"run task","api-key":"run-key"},` +
+				`"resume":{"agent":"codex","query":"resume task","api-key":"resume-key"}}`
+			if err := os.WriteFile(localConfigFile, []byte(config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			var branch string
+			var flags runFlags
+			cmd := &cobra.Command{}
+			cmd.Flags().StringVarP(&branch, "branch", "b", "", "")
+			flags.bind(cmd)
+			if err := configRunArgs(tc.section, &branch, &flags)(cmd, nil); err != nil {
+				t.Fatal(err)
+			}
+			opts, err := flags.options(branch)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if opts.APIKey != tc.wantKey {
+				t.Errorf("APIKey = %q, want selected section key", opts.APIKey)
+			}
+		})
+	}
+}

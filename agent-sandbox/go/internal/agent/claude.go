@@ -7,8 +7,8 @@ import (
 	"agent-sandbox/internal/docker"
 )
 
-// claude runs Claude Code. Its HOME is redirected so the mounted config and
-// credentials are the only ones it sees.
+// claude runs Claude Code. Its HOME is redirected so each credential mode sees
+// only its own mounted or disposable configuration.
 type claude struct{}
 
 func (claude) Name() string         { return "claude" }
@@ -37,6 +37,26 @@ func (c claude) Container(home string) (docker.RunOptions, error) {
 			{Host: claudeConfig, Container: "/claude-home/.claude.json"},
 		},
 	}, nil
+}
+
+// APIKeyContainer gives this run an isolated home so it cannot read or change
+// the host's subscription login. Claude reads the key directly in print mode;
+// no login step or saved credential is needed.
+func (claude) APIKeyContainer(key string) docker.RunOptions {
+	return docker.RunOptions{
+		Interactive: true,
+		Env: []string{
+			"HOME=/claude-home",
+			"ANTHROPIC_API_KEY=" + key,
+			"CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1",
+			"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=0",
+		},
+		Tmpfs: []docker.Tmpfs{{Path: "/claude-home", Options: "rw,exec,mode=1777"}},
+	}
+}
+
+func (c claude) APIKeyArgs(model, prompt string, images []string) []string {
+	return c.Args(model, prompt, images)
 }
 
 func (claude) Args(model, prompt string, images []string) []string {
