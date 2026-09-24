@@ -10,40 +10,34 @@ import (
 )
 
 // commandState carries the agent's exit status out of Cobra's deferred RunE
-// callbacks. Both the root run and resume command update the same named state,
+// callbacks. Both run and resume update the same named state,
 // which main reads only after ExecuteContextC returns.
 type commandState struct {
 	status int
 }
 
 func newRootCmd() (*cobra.Command, *commandState) {
-	var (
-		branchName string
-		flags      runFlags
-	)
 	state := &commandState{}
 
 	cmd := &cobra.Command{
-		Use:   "agent-sandbox [-b <branch-name>] -a <agent> [flags] (<prompt...> | -f <prompt-file>)",
+		Use:   "agent-sandbox <command>",
 		Short: "Run a coding agent in a container, on a git worktree of its own",
 		Long: "Run a coding agent inside the agent-sandbox container, on a git worktree of\n" +
-			"its own, so it never touches the current working copy. Optionally supply the\n" +
-			"worktree branch with -b or --branch; otherwise one is generated.\n\n" +
-			"Supply the agent prompt directly as positional arguments or with -f or\n" +
-			"--file-prompt; exactly one source is required.\n\n" +
+			"its own, so it never touches the current working copy. Use run to create\n" +
+			"a worktree or resume to continue one already recorded.\n\n" +
 			"Authentication comes from the agent's configuration directory on the host,\n" +
 			"which is mounted into the container; no credentials are passed as environment\n" +
 			"variables, so the agent must already be authenticated on the host.",
-		Example: "  agent-sandbox -a codex \"fix the login redirect loop\"\n" +
-			"  agent-sandbox -b fix-go-tests -a codex -i golang:1.26-alpine \"run go test ./...\"\n" +
-			"  agent-sandbox --branch fix-login --agent claude --model sonnet --push \"add a test for it\"\n" +
-			"  agent-sandbox -a codex -f prompt.md",
+		Example: "  agent-sandbox run -a codex -q \"fix the login redirect loop\"\n" +
+			"  agent-sandbox resume -b fix-login -a codex -q \"add a regression test\"",
 
-		// Args has to be set even where cobra's default would do, because a nil
-		// Args makes cobra reject the first argument of a root command that has
-		// subcommands as an unknown command — and here that argument is the
-		// branch name.
-		Args: runArgs,
+		// An explicit validator makes a former root invocation a UsageError,
+		// preserving the exit-status protocol instead of Cobra's unknown-command
+		// error when positional text follows the binary name.
+		Args: usageArgs(cobra.NoArgs),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return cmd.Help()
+		},
 
 		// fail is the only thing that prints an error or a synopsis, so that the
 		// exit status and the message it goes with are decided in one place.
@@ -51,13 +45,40 @@ func newRootCmd() (*cobra.Command, *commandState) {
 		SilenceErrors: true,
 
 		Version: buildVersion(),
+	}
 
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// The positional arguments are joined back into the sentence they were
-			// before the shell took them apart, so that a
-			// prompt of more than one word need not be quoted. A prompt holding
-			// a word that starts with a dash does, or the flag parser claims it.
-			opts, err := flags.options(branchName, args)
+	// pflag reports a malformed flag through the error func of the command it
+	// was parsing, or of the nearest parent that has one, so this covers the
+	// subcommands as well as the run.
+	cmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+		return sandbox.NewUsageError(err)
+	})
+
+	cmd.AddCommand(newRunCmd(state), newResumeCmd(state), newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd(), newWorktreeEditorOpenCmd())
+	return cmd, state
+}
+
+// newRunCmd creates a fresh sandbox worktree. The root only dispatches verbs,
+// so a session cannot start accidentally through the old implicit syntax.
+func newRunCmd(state *commandState) *cobra.Command {
+	var (
+		branchName string
+		flags      runFlags
+	)
+
+	cmd := &cobra.Command{
+		Use:   "run [-b <branch-name>] -a <agent> [flags] (-q <query> | -f <prompt-file>)",
+		Short: "Run a coding agent in a new sandbox worktree",
+		Long: "Run a coding agent in a new sandbox worktree. Optionally supply the\n" +
+			"branch with -b or --branch; otherwise one is generated. Supply the\n" +
+			"instruction with -q or --query, or -f or --file-prompt. Defaults\n" +
+			"may be set in ./agent-sandbox.json.",
+		Example: "  agent-sandbox run -a codex -q \"fix the login redirect loop\"\n" +
+			"  agent-sandbox run -b fix-go-tests -a codex -i golang:1.26-alpine -q \"run go test ./...\"\n" +
+			"  agent-sandbox run -a codex -f prompt.md",
+		Args: configRunArgs("run", &branchName, &flags),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			opts, err := flags.options(branchName)
 			if err != nil {
 				return err
 			}
@@ -69,25 +90,17 @@ func newRootCmd() (*cobra.Command, *commandState) {
 
 	cmd.Flags().StringVarP(&branchName, "branch", "b", "", "worktree branch name (default: generated)")
 	flags.bind(cmd)
-
-	// pflag reports a malformed flag through the error func of the command it
-	// was parsing, or of the nearest parent that has one, so this covers the
-	// subcommands as well as the run.
-	cmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-		return sandbox.NewUsageError(err)
-	})
-
-	cmd.AddCommand(newResumeCmd(state), newWorktreeListCmd(), newWorktreeDeleteCmd(), newWorktreeDeleteAllCmd(), newWorktreeEditorOpenCmd())
-	return cmd, state
+	return cmd
 }
 
 // runFlags is the execution configuration shared by a fresh run and a resume.
-// Their only different input is the meaning of the branch: the root command
+// Their only different input is the meaning of the branch: run
 // creates it when necessary, while resume finds it in the sandbox state file.
 type runFlags struct {
 	agentName     string
 	model         string
 	baseImage     string
+	query         string
 	push          bool
 	commitMessage string
 	filePrompt    string
@@ -101,6 +114,7 @@ func (f *runFlags) bind(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.agentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
 	cmd.Flags().StringVarP(&f.model, "model", "m", "", "model to use (default: the agent's own)")
 	cmd.Flags().StringVarP(&f.baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
+	cmd.Flags().StringVarP(&f.query, "query", "q", "", "instruction for the agent")
 	cmd.Flags().BoolVarP(&f.push, "push", "p", false, "commit the agent's work and push the branch")
 	cmd.Flags().StringVarP(&f.commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
 	cmd.Flags().StringVarP(&f.filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
@@ -114,36 +128,41 @@ func (f *runFlags) bind(cmd *cobra.Command) {
 // options is the one translation from the shared CLI fields to the sandbox
 // configuration. NewOptions continues to own agent lookup, model defaults,
 // image validation, generated branches, and file-prompt resolution.
-func (f runFlags) options(branch string, prompt []string) (sandbox.Options, error) {
+func (f runFlags) options(branch string) (sandbox.Options, error) {
 	return sandbox.NewOptions(sandbox.Options{
 		Branch:        branch,
 		AgentName:     f.agentName,
 		Model:         f.model,
 		BaseImage:     f.baseImage,
 		Push:          f.push,
-		Prompt:        strings.Join(prompt, " "),
+		Prompt:        f.query,
 		CommitMessage: f.commitMessage,
 		FilePrompt:    f.filePrompt,
 		Images:        f.images,
 	})
 }
 
-// runArgs requires exactly one prompt source. A file prompt removes shell
-// quoting from longer instructions, but accepting it alongside positional text
-// would silently discard the latter when Options resolves the file contents.
+// runArgs requires exactly one prompt source and rejects positional text.
+// A file prompt removes shell quoting from longer instructions, but accepting
+// it with a query would silently discard one when Options resolves the file.
 func runArgs(cmd *cobra.Command, args []string) error {
+	if len(args) > 0 {
+		return sandbox.NewUsageError(errors.New("positional prompts are not supported; use -q or --query"))
+	}
 	filePrompt, err := cmd.Flags().GetString("file-prompt")
 	if err != nil {
 		return sandbox.NewUsageError(err)
 	}
+	query, err := cmd.Flags().GetString("query")
+	if err != nil {
+		return sandbox.NewUsageError(err)
+	}
 
-	hasPositionalPrompt := len(args) > 0
-	hasFilePrompt := filePrompt != ""
-	if !hasPositionalPrompt && !hasFilePrompt {
+	if query == "" && filePrompt == "" {
 		return sandbox.UsageError{}
 	}
-	if hasPositionalPrompt && hasFilePrompt {
-		return sandbox.NewUsageError(errors.New("prompt and --file-prompt cannot be used together"))
+	if query != "" && filePrompt != "" {
+		return sandbox.NewUsageError(errors.New("--query and --file-prompt cannot be used together"))
 	}
 	return nil
 }

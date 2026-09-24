@@ -3,7 +3,8 @@
 //
 // Usage:
 //
-//	agent-sandbox [-b <branch-name>] -a <codex|claude|opencode|pi> [-m <model>] [-i <image>] [-p] [-c <commit-message>] (<prompt...> | -f <prompt-file>)
+//	agent-sandbox run [-b <branch-name>] -a <codex|claude|opencode|pi> [-m <model>] [-i <image>] [-p] [-c <commit-message>] (-q <query> | -f <prompt-file>)
+//	agent-sandbox resume -b <branch-name> -a <codex|claude|opencode|pi> (-q <query> | -f <prompt-file>)
 //	agent-sandbox worktree-list
 //	agent-sandbox worktree-delete -b <branch-name> [--force]
 //	agent-sandbox worktree-delete-all [--yes]

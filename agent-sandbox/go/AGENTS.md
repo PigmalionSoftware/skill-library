@@ -19,7 +19,7 @@ component inside it.
 go build ./...                      # compile everything
 go build -o agent-sandbox ./cmd/agent-sandbox   # the binary (gitignored)
 go vet ./...
-go test ./...                       # no test files exist yet
+go test ./...                       # run the Go test suite
 ```
 
 There is no Makefile and no linter config. Releases are cut by pushing a tag matching
@@ -29,17 +29,22 @@ archive that `install.sh` downloads.
 Running the tool requires Docker and a real git repo, and it will build/rebuild the
 `agent-sandbox` image on first use, so a manual run is not a cheap smoke test.
 
+## Test-driven development
+
+Use table-driven test
+
 ## Architecture
 
 Dependency direction is strictly one way — `cmd` → `sandbox` → {`git`, `docker`, `agent`} —
 and the three leaf packages know nothing about each other:
 
-- **`cmd/agent-sandbox`** — argument dispatch and exit status only, built on `cobra`. The
-  root command *is* the run, and the verbs (`worktree-list`, `worktree-delete`,
-  `worktree-delete-all`) are its
-  subcommands, so a first argument that names a verb is a verb and anything else is the
-  branch name of a run. `fail()` is the single exit path and decides the status from the
-  error's type.
+- **`cmd/agent-sandbox`** — argument dispatch, local JSON defaults, and exit status, built
+  on `cobra`. The root command dispatches explicit `run` and `resume` verbs alongside the
+  worktree management commands. Only `run` creates a new worktree. `run` and `resume` read
+  `./agent-sandbox.json` from the invocation directory; CLI flags override its values.
+  `-q`/`--query` supplies an instruction, `-f`/`--file-prompt` reads one from a file,
+  and positional instructions are rejected. `-p`/`--push` commits and pushes.
+  `fail()` is the single exit path and decides the status from the error's type.
 - **`internal/sandbox`** — the orchestration: parse options, ensure the image is current,
   create the worktree, run the container, optionally commit and push.
 - **`internal/git`** — thin wrappers over the `git` CLI (`exec.Command`), not a git library.
@@ -71,7 +76,8 @@ build its own image from anywhere with no build context beyond that one file.
   print the message only, exit with its status. `context.Canceled` → exit 130. Otherwise the
   agent's own exit code becomes the command's exit code. Everything cobra can reject has to
   be funnelled into `UsageError` to keep that protocol: flag errors through
-  `SetFlagErrorFunc` on the root, positional-argument errors through the `usageArgs` wrapper.
+  `SetFlagErrorFunc` on the root, positional-argument errors through `usageArgs` or
+  `runArgs`.
   A required flag is therefore checked in `RunE`, **not** with `MarkFlagRequired`, whose
   error cobra raises outside both hooks and which would otherwise exit 1 with no synopsis.
 - **A cancelled run stops its container and waits for it** (`docker.stop`), on a context

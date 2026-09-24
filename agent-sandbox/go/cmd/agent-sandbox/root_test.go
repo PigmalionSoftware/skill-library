@@ -17,7 +17,7 @@ func TestRunArgsAcceptsFilePromptWithoutPositionalPrompt(t *testing.T) {
 		t.Fatalf("write prompt file: %v", err)
 	}
 
-	cmd, _ := newRootCmd()
+	cmd := newRunCmd(&commandState{})
 	if err := cmd.Flags().Set("file-prompt", path); err != nil {
 		t.Fatalf("set file-prompt: %v", err)
 	}
@@ -27,9 +27,9 @@ func TestRunArgsAcceptsFilePromptWithoutPositionalPrompt(t *testing.T) {
 	}
 }
 
-func TestImageFlagIsRepeatableAndPromptCanFollowTerminator(t *testing.T) {
-	cmd, _ := newRootCmd()
-	if err := cmd.Flags().Parse([]string{"--image", "first.png", "--image", "second.png", "--", "describe", "them"}); err != nil {
+func TestImageFlagIsRepeatableWithQuery(t *testing.T) {
+	cmd := newRunCmd(&commandState{})
+	if err := cmd.Flags().Parse([]string{"--image", "first.png", "--image", "second.png", "-q", "describe them"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,29 +40,35 @@ func TestImageFlagIsRepeatableAndPromptCanFollowTerminator(t *testing.T) {
 	if want := []string{"first.png", "second.png"}; !reflect.DeepEqual(images, want) {
 		t.Fatalf("--image values = %q, want %q", images, want)
 	}
-	if args := cmd.Flags().Args(); !reflect.DeepEqual(args, []string{"describe", "them"}) {
-		t.Fatalf("prompt args = %q, want [describe them]", args)
+	if args := cmd.Flags().Args(); len(args) != 0 {
+		t.Fatalf("positional args = %q, want none", args)
+	}
+	if query, err := cmd.Flags().GetString("query"); err != nil || query != "describe them" {
+		t.Fatalf("query = %q, err = %v, want describe them", query, err)
 	}
 }
 
-func TestRunArgsRejectsBothPromptSources(t *testing.T) {
-	cmd, _ := newRootCmd()
+func TestRunArgsRejectsBothFlagPromptSources(t *testing.T) {
+	cmd := newRunCmd(&commandState{})
 	if err := cmd.Flags().Set("file-prompt", "prompt.md"); err != nil {
 		t.Fatalf("set file-prompt: %v", err)
 	}
+	if err := cmd.Flags().Set("query", "different task"); err != nil {
+		t.Fatalf("set query: %v", err)
+	}
 
-	err := runArgs(cmd, []string{"different", "task"})
+	err := runArgs(cmd, nil)
 	assertUsageError(t, err)
 }
 
 func TestRunArgsRejectsMissingPromptSource(t *testing.T) {
-	cmd, _ := newRootCmd()
+	cmd := newRunCmd(&commandState{})
 	assertUsageError(t, runArgs(cmd, nil))
 }
 
 func TestResumeRequiresBranch(t *testing.T) {
 	cmd, _ := newRootCmd()
-	cmd.SetArgs([]string{"resume", "-a", "codex", "continue"})
+	cmd.SetArgs([]string{"resume", "-a", "codex", "-q", "continue"})
 
 	assertUsageError(t, cmd.Execute())
 }

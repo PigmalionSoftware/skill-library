@@ -9,7 +9,7 @@ import (
 )
 
 // newResumeCmd runs another agent session in a sandbox worktree named by its
-// branch. The root command keeps creating worktrees, so reuse remains an
+// branch. The run command keeps creating worktrees, so reuse remains an
 // explicit operation and cannot happen by accident on a normal run.
 func newResumeCmd(state *commandState) *cobra.Command {
 	var (
@@ -18,19 +18,19 @@ func newResumeCmd(state *commandState) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "resume -b <branch-name> -a <agent> [flags] (<prompt...> | -f <prompt-file>)",
+		Use:   "resume -b <branch-name> -a <agent> [flags] (-q <query> | -f <prompt-file>)",
 		Short: "Run a coding agent again in a sandbox worktree",
 		Long: "Run a coding agent in a sandbox worktree recorded for this repository.\n" +
 			"The branch name is shown by worktree-list; its committed and uncommitted\n" +
 			"work stays in place for the new session.",
-		Example: "  agent-sandbox resume -b fix-login -a codex \"add a regression test\"\n" +
+		Example: "  agent-sandbox resume -b fix-login -a codex -q \"add a regression test\"\n" +
 			"  agent-sandbox resume -b fix-login -a claude --push -f next-task.md",
-		Args: runArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Args: configRunArgs("resume", &branchName, &flags),
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			if branchName == "" {
 				return sandbox.NewUsageError(errors.New("-b <branch-name> is required"))
 			}
-			opts, err := flags.options(branchName, args)
+			opts, err := flags.options(branchName)
 			if err != nil {
 				return err
 			}
