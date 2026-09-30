@@ -45,28 +45,30 @@ func applyLocalConfig(cmd *cobra.Command, name string, branch *string, flags *ru
 		case "branch":
 			*branch = value.(string)
 		case "agent":
-			flags.agentName = value.(string)
+			flags.AgentName = value.(string)
 		case "api-key":
-			flags.apiKey = value.(string)
+			flags.APIKey = value.(string)
 		case "model":
-			flags.model = value.(string)
+			flags.Model = value.(string)
 		case "base-image":
-			flags.baseImage = value.(string)
+			flags.BaseImage = value.(string)
 		case "query":
-			flags.query = value.(string)
+			flags.Prompt = value.(string)
 		case "push":
-			flags.push = value.(bool)
+			flags.Push = value.(bool)
 		case "pr":
-			flags.pr = value.(bool)
+			flags.PR = value.(bool)
+		case "hn":
+			flags.HostNetwork = value.(bool)
 		case "commit-message":
-			flags.commitMessage = value.(string)
+			flags.CommitMessage = value.(string)
 		case "file-prompt":
-			flags.filePrompt = value.(string)
+			flags.FilePrompt = value.(string)
 		case "image":
 			images := value.([]any)
-			flags.images = make([]string, len(images))
+			flags.Images = make([]string, len(images))
 			for i, image := range images {
-				flags.images[i] = image.(string)
+				flags.Images[i] = image.(string)
 			}
 		}
 	}
@@ -74,10 +76,10 @@ func applyLocalConfig(cmd *cobra.Command, name string, branch *string, flags *ru
 	// An explicit command-line prompt source replaces the other source only
 	// when it came from JSON. Two CLI sources are still rejected by runArgs.
 	if cmd.Flags().Changed("query") && !cmd.Flags().Changed("file-prompt") {
-		flags.filePrompt = ""
+		flags.FilePrompt = ""
 	}
 	if cmd.Flags().Changed("file-prompt") && !cmd.Flags().Changed("query") {
-		flags.query = ""
+		flags.Prompt = ""
 	}
 	return nil
 }
@@ -129,7 +131,7 @@ func validateConfigField(section, key string, value any) error {
 		if _, ok := value.(string); !ok {
 			return fmt.Errorf("%s: %s must be a JSON string", localConfigFile, fieldName)
 		}
-	case "push", "pr":
+	case "push", "pr", "hn":
 		if _, ok := value.(bool); !ok {
 			return fmt.Errorf("%s: %s must be a JSON boolean", localConfigFile, fieldName)
 		}

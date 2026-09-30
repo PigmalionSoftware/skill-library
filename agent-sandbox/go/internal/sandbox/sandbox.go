@@ -251,6 +251,7 @@ func containerOptions(opts Options, worktreeDir string) (docker.RunOptions, erro
 	}
 	runOpts.User = strconv.Itoa(os.Getuid()) + ":" + strconv.Itoa(os.Getgid())
 	runOpts.Mounts = append(runOpts.Mounts, docker.Mount{Host: worktreeDir, Container: workspace})
+	runOpts.HostNetwork = opts.HostNetwork
 	if opts.BaseImage != "" {
 		// An arbitrary Alpine base may leave a numeric host UID trying to create
 		// /.cache. XDG_CACHE_HOME gives every tool that follows the standard a

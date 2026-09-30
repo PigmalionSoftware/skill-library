@@ -35,10 +35,11 @@ type RunOptions struct {
 	// Interactive attaches stdin to the container.
 	Interactive bool
 	// TTY allocates a pseudo terminal, which implies Interactive.
-	TTY    bool
-	Env    []string // "KEY=VALUE" entries
-	Mounts []Mount
-	Tmpfs  []Tmpfs
+	TTY         bool
+	Env         []string // "KEY=VALUE" entries
+	Mounts      []Mount
+	Tmpfs       []Tmpfs
+	HostNetwork bool
 }
 
 // Client runs containers of a single image, built from the Dockerfile supplied
