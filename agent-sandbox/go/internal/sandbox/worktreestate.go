@@ -10,10 +10,11 @@ import (
 
 // worktreeRecord is one worktree the sandbox created.
 type worktreeRecord struct {
-	Repo    string    `json:"repo"`
-	Path    string    `json:"path"`
-	Branch  string    `json:"branch"`
-	Created time.Time `json:"created"`
+	Repo       string    `json:"repo"`
+	Path       string    `json:"path"`
+	Branch     string    `json:"branch"`
+	BaseBranch string    `json:"base_branch,omitempty"`
+	Created    time.Time `json:"created"`
 }
 
 // recordWorktree adds a worktree to the state file. A run only ever appends one

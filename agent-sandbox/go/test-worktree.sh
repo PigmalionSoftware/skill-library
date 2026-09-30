@@ -10,6 +10,8 @@
 # TEST_EDITOR=1 opens VS Code for the resumed worktree. TEST_CLAUDE_IMAGES=1
 # or TEST_CODEX_IMAGES=1 needs the corresponding authenticated agent and
 # verifies actual --image attachment handling.
+# JSON PR defaults are overridden with --pr=false on run and resume. No
+# GitHub publication is tested, and these sessions leave their changes local.
 #
 # Usage: ./test-worktree.sh
 
@@ -98,6 +100,9 @@ check_help worktree-delete-all
 # 1.26 before creating hello.txt. Its flags and prompt come from the JSON in
 # the invocation directory; the clean directory used by other commands has no
 # JSON and cannot inherit the caller's private agent-sandbox.json.
+# The JSON enables PRs so --pr=false must override it before checking gh or
+# running the agent. Newly created state records also show the starting branch
+# in base_branch, which must survive the resume below.
 cat >"$config_dir/agent-sandbox.json" <<'JSON'
 {
   "run": {
@@ -105,6 +110,8 @@ cat >"$config_dir/agent-sandbox.json" <<'JSON'
     "agent": "claude",
     "model": "opus",
     "base-image": "golang:1.26-alpine",
+    "pr": true,
+    "push": false,
     "query": "run go version, then create a file named hello.txt at the repository root containing the text hello world"
   },
   "resume": {
@@ -112,24 +119,29 @@ cat >"$config_dir/agent-sandbox.json" <<'JSON'
     "agent": "claude",
     "model": "opus",
     "base-image": "golang:1.26-alpine",
+    "pr": true,
+    "push": false,
     "query": "this default prompt should be overridden by -q"
   }
 }
 JSON
-execute_from "$config_dir" run
+execute_from "$config_dir" run --pr=false
 show_state
 
 # Resume takes its branch and agent defaults from JSON while -q overrides the
 # JSON prompt. It must see the uncommitted hello.txt from the first session,
 # add a second file, and leave the state file with its original one line.
-execute_from "$config_dir" resume \
+# Its PR default is disabled independently, just as on the initial run.
+execute_from "$config_dir" resume --pr=false \
   -q "read hello.txt, then create resumed.txt at the repository root containing the text resumed successfully"
 show_state
 
 # --file-prompt takes the task from a regular host file. This run is kept for
-# worktree-delete-all below.
+# worktree-delete-all below. Explicit false publication flags also work when
+# there is no JSON config in the invocation directory.
 printf '%s\n' "create file-prompt.txt at the repository root containing file prompt works" >"$prompt_file"
-execute run -b tmp-file-prompt-test -a "$agent" -m "$model" -f "$prompt_file"
+execute run -b tmp-file-prompt-test -a "$agent" -m "$model" \
+  --pr=false --push=false -f "$prompt_file"
 
 # worktree-delete handles one clean sandbox worktree directly. The agent is
 # asked only to inspect it, so deletion should not need --force.

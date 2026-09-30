@@ -21,6 +21,7 @@ type Options struct {
 	Model         string
 	BaseImage     string
 	Push          bool
+	PR            bool
 	Prompt        string
 	CommitMessage string
 	FilePrompt    string

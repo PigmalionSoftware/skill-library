@@ -56,6 +56,8 @@ func applyLocalConfig(cmd *cobra.Command, name string, branch *string, flags *ru
 			flags.query = value.(string)
 		case "push":
 			flags.push = value.(bool)
+		case "pr":
+			flags.pr = value.(bool)
 		case "commit-message":
 			flags.commitMessage = value.(string)
 		case "file-prompt":
@@ -127,7 +129,7 @@ func validateConfigField(section, key string, value any) error {
 		if _, ok := value.(string); !ok {
 			return fmt.Errorf("%s: %s must be a JSON string", localConfigFile, fieldName)
 		}
-	case "push":
+	case "push", "pr":
 		if _, ok := value.(bool); !ok {
 			return fmt.Errorf("%s: %s must be a JSON boolean", localConfigFile, fieldName)
 		}

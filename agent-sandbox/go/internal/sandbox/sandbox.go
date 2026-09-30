@@ -54,6 +54,14 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	baseBranch, err := repo.CurrentBranch(ctx)
+	if err != nil {
+		return 0, err
+	}
+	githubClient, err := preparePullRequest(ctx, opts, repo, baseBranch)
+	if err != nil {
+		return 0, err
+	}
 
 	client, err := imageClient(opts)
 	if err != nil {
@@ -90,10 +98,11 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	// The worktree is written down before the agent runs, because a worktree
 	// missing from the state file is one no worktree verb can see afterwards.
 	record := worktreeRecord{
-		Repo:    repo.Dir,
-		Path:    worktreeDir,
-		Branch:  opts.Branch,
-		Created: time.Now().UTC(),
+		Repo:       repo.Dir,
+		Path:       worktreeDir,
+		Branch:     opts.Branch,
+		BaseBranch: baseBranch,
+		Created:    time.Now().UTC(),
 	}
 	if err := recordWorktree(record); err != nil {
 		// Nothing has run in the worktree yet, so undoing it costs nothing and
@@ -111,7 +120,7 @@ func Run(ctx context.Context, opts Options, out io.Writer) (int, error) {
 		return 0, err
 	}
 
-	if err := publish(opts, worktreeDir, repo, out); err != nil {
+	if err := publishResult(ctx, opts, record, repo, client, githubClient, status, out); err != nil {
 		return 0, err
 	}
 	return status, nil
@@ -125,6 +134,19 @@ func Resume(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	found, worktree, err := resumableWorktree(opts.Branch)
 	if err != nil {
 		return 0, err
+	}
+	githubClient, err := preparePullRequest(ctx, opts, found.repo, worktree.BaseBranch)
+	if err != nil {
+		return 0, err
+	}
+	if opts.PR {
+		branch, err := found.repo.At(worktree.Path).CurrentBranch(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if branch != opts.Branch {
+			return 0, fmt.Errorf("recorded PR worktree must be on branch %s, found %q", opts.Branch, branch)
+		}
 	}
 
 	client, err := imageClient(opts)
@@ -151,7 +173,7 @@ func Resume(ctx context.Context, opts Options, out io.Writer) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if err := publish(opts, worktree.Path, found.repo, out); err != nil {
+	if err := publishResult(ctx, opts, worktree, found.repo, client, githubClient, status, out); err != nil {
 		return 0, err
 	}
 	return status, nil
