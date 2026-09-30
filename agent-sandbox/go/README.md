@@ -52,7 +52,7 @@ y necesita acceso a npm.
 ## Uso
 
 ```text
-agent-sandbox run [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [--image <archivo>]... [-p] [-c <mensaje-commit>] (-q <consulta> | -f <archivo-prompt>)
+agent-sandbox run [-b <branch>] -a <codex|claude|opencode|pi> [-m <modelo>] [-i <imagen>] [--image <archivo>]... [--hn] [-p] [-c <mensaje-commit>] (-q <consulta> | -f <archivo-prompt>)
 agent-sandbox resume -b <branch> -a <codex|claude|opencode|pi> [opciones] (-q <consulta> | -f <archivo-prompt>)
 ```
 | Parámetro | Descripción |
@@ -61,6 +61,7 @@ agent-sandbox resume -b <branch> -a <codex|claude|opencode|pi> [opciones] (-q <c
 | `-a`, `--agent` | Obligatorio. Uno de `codex`, `claude`, `opencode` o `pi`. |
 | `-m`, `--model` | Opcional. Sobrescribe el modelo que resuelve el agente. |
 | `-i`, `--base-image` | Opcional. Deriva una imagen desde una base compatible, para disponer de su toolchain dentro del sandbox. |
+| `--hn` | Opcional. Comparte la red del host con el contenedor, sin limitar puertos. Desactivado por defecto; ver los riesgos en "Red del host". |
 | `-p`, `--push` | Al finalizar, agrega todos los cambios, crea un commit y hace `git push --set-upstream origin <branch>`. |
 | `-q`, `--query` | Instrucción para el agente. |
 | `-c`, `--commit-message` | Opcional. Mensaje del commit creado por `-p` o `--push`; si se omite, usa el prompt resuelto. Sin `-p` o `--push`, no tiene efecto. |
@@ -82,7 +83,7 @@ El branch es el nombre mostrado por `worktree-list`. Si se combina con
 
 `run` y `resume` leen `./agent-sandbox.json` si existe en el directorio desde
 el que se ejecutan. Cada sección admite los nombres largos de las opciones
-`branch`, `agent`, `model`, `base-image`, `query`, `push`, `commit-message`,
+`branch`, `agent`, `model`, `base-image`, `query`, `push`, `hn`, `commit-message`,
 `file-prompt` e `image`, además del campo `api-key`. `api-key` solo existe en
 el JSON: no hay una opción de línea de comandos equivalente. Las opciones
 explícitas de la línea de comandos prevalecen sobre los demás valores del JSON.
@@ -93,12 +94,14 @@ explícitas de la línea de comandos prevalecen sobre los demás valores del JSO
     "agent": "codex",
     "base-image": "golang:1.26-alpine",
     "query": "run go version and do not change any files",
-    "push": false
+    "push": false,
+    "hn": false
   },
   "resume": {
     "branch": "fix-login",
     "agent": "codex",
-    "query": "add a regression test"
+    "query": "add a regression test",
+    "hn": false
   }
 }
 ```

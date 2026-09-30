@@ -96,54 +96,35 @@ func newRunCmd(state *commandState) *cobra.Command {
 // Their only different input is the meaning of the branch: run
 // creates it when necessary, while resume finds it in the sandbox state file.
 type runFlags struct {
-	agentName     string
-	apiKey        string
-	model         string
-	baseImage     string
-	query         string
-	push          bool
-	pr            bool
-	commitMessage string
-	filePrompt    string
-	images        []string
+	sandbox.Options
 }
 
 // bind gives both commands the same agent execution flags and completions, so
 // a new run and a resumed run cannot silently grow different container or
 // publish behavior.
 func (f *runFlags) bind(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&f.agentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
-	cmd.Flags().StringVarP(&f.model, "model", "m", "", "model to use (default: the agent's own)")
-	cmd.Flags().StringVarP(&f.baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
-	cmd.Flags().StringVarP(&f.query, "query", "q", "", "instruction for the agent")
-	cmd.Flags().BoolVarP(&f.push, "push", "p", false, "commit the agent's work and push the branch")
-	cmd.Flags().BoolVar(&f.pr, "pr", false, "commit, push to origin, and create or reuse a GitHub pull request")
-	cmd.Flags().StringVarP(&f.commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
-	cmd.Flags().StringVarP(&f.filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
-	cmd.Flags().StringArrayVar(&f.images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
+	cmd.Flags().StringVarP(&f.AgentName, "agent", "a", "", "agent to run ("+strings.Join(sandbox.AgentNames(), "|")+")")
+	cmd.Flags().StringVarP(&f.Model, "model", "m", "", "model to use (default: the agent's own)")
+	cmd.Flags().StringVarP(&f.BaseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
+	cmd.Flags().StringVarP(&f.Prompt, "query", "q", "", "instruction for the agent")
+	cmd.Flags().BoolVarP(&f.Push, "push", "p", false, "commit the agent's work and push the branch")
+	cmd.Flags().BoolVar(&f.PR, "pr", false, "commit, push to origin, and create or reuse a GitHub pull request")
+	cmd.Flags().StringVarP(&f.CommitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
+	cmd.Flags().StringVarP(&f.FilePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
+	cmd.Flags().StringArrayVar(&f.Images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
+	cmd.Flags().BoolVar(&f.HostNetwork, "hn", false, "access to host services from container")
 
 	completeFlag(cmd, "agent", func(string) ([]string, error) {
 		return sandbox.AgentNames(), nil
 	})
 }
 
-// options is the one translation from the shared CLI fields to the sandbox
-// configuration. NewOptions continues to own agent lookup, model defaults,
-// image validation, generated branches, and file-prompt resolution.
+// options resolves a copy so agent lookup, model defaults and prompt loading
+// cannot overwrite the raw values bound to Cobra's flags.
 func (f runFlags) options(branch string) (sandbox.Options, error) {
-	return sandbox.NewOptions(sandbox.Options{
-		Branch:        branch,
-		AgentName:     f.agentName,
-		APIKey:        f.apiKey,
-		Model:         f.model,
-		BaseImage:     f.baseImage,
-		Push:          f.push,
-		PR:            f.pr,
-		Prompt:        f.query,
-		CommitMessage: f.commitMessage,
-		FilePrompt:    f.filePrompt,
-		Images:        f.images,
-	})
+	opts := f.Options
+	opts.Branch = branch
+	return sandbox.NewOptions(opts)
 }
 
 // runArgs requires exactly one prompt source and rejects positional text.

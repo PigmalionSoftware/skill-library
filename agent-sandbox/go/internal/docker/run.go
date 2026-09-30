@@ -220,6 +220,11 @@ func hostConfig(opts RunOptions) *container.HostConfig {
 			config.Tmpfs[tmpfs.Path] = tmpfs.Options
 		}
 	}
+
+	if opts.HostNetwork {
+		config.NetworkMode = "host"
+	}
+
 	return config
 }
 

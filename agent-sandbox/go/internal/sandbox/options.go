@@ -26,6 +26,7 @@ type Options struct {
 	CommitMessage string
 	FilePrompt    string
 	Images        []string
+	HostNetwork   bool
 }
 
 // NewOptions turns the values the command line carried into one invocation,
