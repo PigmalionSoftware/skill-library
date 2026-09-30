@@ -102,6 +102,7 @@ type runFlags struct {
 	baseImage     string
 	query         string
 	push          bool
+	pr            bool
 	commitMessage string
 	filePrompt    string
 	images        []string
@@ -116,6 +117,7 @@ func (f *runFlags) bind(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&f.baseImage, "base-image", "i", "", "Alpine base image for the agent sandbox (for example golang:1.26-alpine)")
 	cmd.Flags().StringVarP(&f.query, "query", "q", "", "instruction for the agent")
 	cmd.Flags().BoolVarP(&f.push, "push", "p", false, "commit the agent's work and push the branch")
+	cmd.Flags().BoolVar(&f.pr, "pr", false, "commit, push to origin, and create or reuse a GitHub pull request")
 	cmd.Flags().StringVarP(&f.commitMessage, "commit-message", "c", "", "commit message (default: resolved prompt)")
 	cmd.Flags().StringVarP(&f.filePrompt, "file-prompt", "f", "", "path to a file containing the agent prompt")
 	cmd.Flags().StringArrayVar(&f.images, "image", nil, "image to attach to the initial Codex prompt (repeatable)")
@@ -136,6 +138,7 @@ func (f runFlags) options(branch string) (sandbox.Options, error) {
 		Model:         f.model,
 		BaseImage:     f.baseImage,
 		Push:          f.push,
+		PR:            f.pr,
 		Prompt:        f.query,
 		CommitMessage: f.commitMessage,
 		FilePrompt:    f.filePrompt,
