@@ -4,6 +4,8 @@
 # list, editor, single delete, and bulk delete. It shows that the state file,
 # not git, decides what the verbs can see.
 # Nothing is asserted: read the output.
+# Generated commit messages are displayed after run and resume. Publication
+# stays disabled, so commit fallback and post-commit cleanup are not exercised.
 #
 # Needs Docker and an authenticated claude. Point XDG_CONFIG_HOME at a scratch
 # directory to keep the real ~/.config/agent-sandbox out of it.
@@ -86,6 +88,24 @@ show_state() {
   cat -- "$state" 2>/dev/null || printf '(no state file)\n'
 }
 
+# The container writes into the host worktree through its /workspace mount.
+# Display the artifact and the staging preview without committing or pushing.
+show_commit_message() {
+  local branch="$1" worktree
+  worktree="$(git worktree list --porcelain | awk -v branch="refs/heads/$branch" '
+    /^worktree / { path = substr($0, 10) }
+    $1 == "branch" && $2 == branch { print path }
+  ')"
+  if [[ -z "$worktree" ]]; then
+    printf '\n[no worktree found for %s]\n' "$branch"
+    return
+  fi
+  printf '\n[generated commit message for %s; expect one short plain-text line]\n' "$branch"
+  cat -- "$worktree/commit-message.txt" || printf '[commit message file missing]\n'
+  printf '\n[staging preview; commit-message.txt must not appear]\n'
+  git -C "$worktree" add --dry-run -A -- . ':(top,exclude)commit-message.txt'
+}
+
 execute --version
 check_help
 check_help run
@@ -126,6 +146,7 @@ cat >"$config_dir/agent-sandbox.json" <<'JSON'
 }
 JSON
 execute_from "$config_dir" run --pr=false
+show_commit_message tmp-run-test
 show_state
 
 # Resume takes its branch and agent defaults from JSON while -q overrides the
@@ -134,6 +155,7 @@ show_state
 # Its PR default is disabled independently, just as on the initial run.
 execute_from "$config_dir" resume --pr=false \
   -q "read hello.txt, then create resumed.txt at the repository root containing the text resumed successfully"
+show_commit_message tmp-run-test
 show_state
 
 # --file-prompt takes the task from a regular host file. This run is kept for
@@ -142,12 +164,14 @@ show_state
 printf '%s\n' "create file-prompt.txt at the repository root containing file prompt works" >"$prompt_file"
 execute run -b tmp-file-prompt-test -a "$agent" -m "$model" \
   --pr=false --push=false -f "$prompt_file"
+show_commit_message tmp-file-prompt-test
 
-# worktree-delete handles one clean sandbox worktree directly. The agent is
-# asked only to inspect it, so deletion should not need --force.
+# Even an inspection-only run writes commit-message.txt. Show that ordinary
+# deletion refuses the dirty worktree, then remove it with --force.
 execute run -b tmp-delete-test -a "$agent" -m "$model" -i "$base_image" \
   -q "run git status and do not modify any repository file"
 execute worktree-delete -b tmp-delete-test
+execute worktree-delete -b tmp-delete-test --force
 
 # Opening an editor is intentionally opt-in because it launches a host GUI.
 if [[ "${TEST_EDITOR:-0}" == "1" ]]; then

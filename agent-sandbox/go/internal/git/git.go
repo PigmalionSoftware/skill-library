@@ -3,6 +3,8 @@
 package git
 
 import (
+	"agent-sandbox/internal/utils"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -90,12 +92,15 @@ func (r *Repo) AddWorktree(dir, branch string, create bool) error {
 	return nil
 }
 
-// StageAll stages every change in the working directory.
+// StageAll stages changes except the generated commit-message artifact.
 func (r *Repo) StageAll() error {
-	if err := r.run("add", "-A"); err != nil {
-		return fmt.Errorf("git add: %w", err)
-	}
-	return nil
+	return r.stageAll(context.Background())
+}
+
+// stageAll shares the artifact exclusion between publishing paths while
+// allowing callers with a context to cancel the Git command.
+func (r *Repo) stageAll(ctx context.Context) error {
+	return r.runContext(ctx, "add", "-A", "--", ".", ":(top,exclude)"+utils.CommitMessageFile)
 }
 
 // HasStagedChanges reports whether anything is staged for commit.

@@ -318,14 +318,12 @@ func publish(opts Options, worktreeDir string, repo *git.Repo, out io.Writer) er
 		fmt.Fprintf(out, "Nothing to commit in %s\n", worktreeDir)
 		return nil
 	}
-	commitMessage := opts.Prompt
-	if opts.CommitMessage != "" {
-		commitMessage = opts.CommitMessage
-	}
+	commitMessage := resolveCommitMessage(opts, worktreeDir, out)
 
 	if err := worktree.Commit(commitMessage); err != nil {
 		return err
 	}
+	removeCommitMessage(worktreeDir, out)
 	return worktree.Push(opts.Branch)
 }
 

@@ -76,13 +76,11 @@ func publishPullRequest(ctx context.Context, opts Options, record worktreeRecord
 	if branch != opts.Branch {
 		return fmt.Errorf("PR worktree must remain on branch %s, found %q; branch has not been pushed", opts.Branch, branch)
 	}
-	message := opts.Prompt
-	if opts.CommitMessage != "" {
-		message = opts.CommitMessage
-	}
+	message := resolveCommitMessage(opts, record.Path, out)
 	if err := worktree.CommitPending(ctx, message); err != nil {
 		return fmt.Errorf("committing PR changes; branch has not been pushed: %w", err)
 	}
+	removeCommitMessage(record.Path, out)
 	base, err := worktree.FetchBase(ctx, record.BaseBranch)
 	if err != nil {
 		return fmt.Errorf("fetching PR base; branch has not been pushed: %w", err)

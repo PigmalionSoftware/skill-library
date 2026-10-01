@@ -72,7 +72,7 @@ func (r *Repo) FetchBase(ctx context.Context, branch string) (string, error) {
 // CommitPending does not create an empty commit, but a clean worktree remains
 // eligible for publication when its existing commits have not been pushed yet.
 func (r *Repo) CommitPending(ctx context.Context, message string) error {
-	if err := r.runContext(ctx, "add", "-A"); err != nil {
+	if err := r.stageAll(ctx); err != nil {
 		return err
 	}
 	_, err := r.outputContext(ctx, "diff", "--cached", "--quiet", "--exit-code")

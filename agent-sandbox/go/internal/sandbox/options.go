@@ -113,7 +113,15 @@ func AgentNames() []string {
 // FullPrompt is the prompt handed to the agent: the user's instruction plus the
 // house rules for a sandbox run.
 func (o Options) FullPrompt() string {
-	return o.Prompt + " do not use superpowerer or any spec skills, you decide all,  do not commit or push changes to git"
+	return fmt.Sprintf(`%s
+
+You decide all, do not ask questions.
+Do not stage, commit, or push changes to Git.
+
+After completing the changes, write a commit message to /workspace/%s.
+Base it on the actual changes made, not the original request.
+Use one short line of plain text, with no prefix, quotes, Markdown, or explanation.
+`, o.Prompt, utils.CommitMessageFile)
 }
 
 // generateBranchName creates a lowercase-letter name with a six-digit suffix
