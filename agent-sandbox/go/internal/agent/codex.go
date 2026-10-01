@@ -9,11 +9,19 @@ import (
 // codex runs OpenAI Codex. It needs a TTY, so the container is started with -it.
 type codex struct{}
 
-func (codex) Name() string         { return "codex" }
-func (codex) Binary() string       { return "codex" }
-func (codex) Package() string      { return "@openai/codex" }
-func (codex) BuildArg() string     { return "CODEX_VERSION" }
-func (codex) DefaultModel() string { return "gpt-5.6-terra" }
+func (codex) Name() string     { return "codex" }
+func (codex) Binary() string   { return "codex" }
+func (codex) Package() string  { return "@openai/codex" }
+func (codex) BuildArg() string { return "CODEX_VERSION" }
+
+func (codex) DefaultModel() string {
+	providers, err := readProvider()
+	if err != nil {
+		return ""
+	}
+	return providers["openai"].DefaultModel
+}
+
 func (codex) SupportsImages() bool { return true }
 
 func (c codex) Container(home string) (docker.RunOptions, error) {

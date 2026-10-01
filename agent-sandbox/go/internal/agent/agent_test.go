@@ -65,6 +65,34 @@ func TestRegistryNames(t *testing.T) {
 	}
 }
 
+func TestDefaultModels(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{name: "codex", want: "gpt-6.1-sol"},
+		{name: "claude", want: "claude-opus-5-5"},
+		{name: "opencode", want: ""},
+		{name: "pi", want: ""},
+	}
+
+	agents := make(map[string]Agent)
+	for _, agent := range All() {
+		agents[agent.Name()] = agent
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			agent, ok := agents[tt.name]
+			if !ok {
+				t.Fatalf("All() is missing agent %q", tt.name)
+			}
+			if got := agent.DefaultModel(); got != tt.want {
+				t.Fatalf("%s.DefaultModel() = %q, want %q", tt.name, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRequireDir(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "config")

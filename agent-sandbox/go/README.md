@@ -234,7 +234,7 @@ docker image rm <IMAGE_ID>
 
 ### Modelos
 
-Al omitir `--model`, Codex usa `gpt-5.6-terra` y Claude Code usa `opus`.
+Al omitir `--model`, Codex usa `gpt-6.1-sol` y Claude Code usa `claude-opus-5-5`.
 opencode y pi dejan que su propia configuración elija el modelo. Los valores de
 `--model` se pasan directamente al agente: por ejemplo, `gpt-5.6-sol` para
 Codex, `sonnet` para Claude Code y `proveedor/modelo` para opencode o pi.

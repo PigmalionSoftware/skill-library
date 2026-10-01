@@ -11,11 +11,17 @@ import (
 // only its own mounted or disposable configuration.
 type claude struct{}
 
-func (claude) Name() string         { return "claude" }
-func (claude) Binary() string       { return "claude" }
-func (claude) Package() string      { return "@anthropic-ai/claude-code" }
-func (claude) BuildArg() string     { return "CLAUDE_CODE_VERSION" }
-func (claude) DefaultModel() string { return "opus" }
+func (claude) Name() string     { return "claude" }
+func (claude) Binary() string   { return "claude" }
+func (claude) Package() string  { return "@anthropic-ai/claude-code" }
+func (claude) BuildArg() string { return "CLAUDE_CODE_VERSION" }
+func (claude) DefaultModel() string {
+	providers, err := readProvider()
+	if err != nil {
+		return ""
+	}
+	return providers["anthropic"].DefaultModel
+}
 func (claude) SupportsImages() bool { return true }
 
 func (c claude) Container(home string) (docker.RunOptions, error) {
