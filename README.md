@@ -4,6 +4,10 @@ Colección de **skills** (habilidades) para clientes de agentes de IA (como Clau
 
 Cada skill vive en su propia carpeta dentro de `skills/` y se define en un archivo `SKILL.md`.
 
+El repositorio también incluye una [API de notas en Go](notes-api/README.md)
+independiente, con endpoints CRUD, persistencia en un archivo JSON y pruebas.
+Para iniciarla: `cd notes-api` y `go run ./cmd/notes-api` (Go 1.26 o superior).
+
 ## Instalación
 
 ```bash
